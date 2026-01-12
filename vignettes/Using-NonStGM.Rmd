@@ -1,0 +1,21 @@
+---
+title: "Using-NonStGM"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using-NonStGM}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(NonStGM)
+```
+
+# To build to HTML at the end , build pane , install and restart
