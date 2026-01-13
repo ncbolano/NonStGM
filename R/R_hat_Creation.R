@@ -31,7 +31,7 @@ Hat.R = function(J, k, nu, W, M) {
 #' @param M1 scalar smoothing value
 #' @return
 #' @noRd
-Hat.R.reduced <- function(J, k, nu, W,M1, a) {
+Hat.R.reduced = function(J, k, nu, W,M1, a) {
   n = nrow(J)
   p = ncol(J)
   R_nu_M = matrix(0, (p * (2 * nu + 1) - 1), (p * (2 * nu + 1) - 1))
