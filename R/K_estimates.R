@@ -3,10 +3,10 @@ smoothed_spectral_density = function(JJ, k, m, Kernel_func = Kernel_Triangular) 
   p = ncol(JJ)
   S_k = matrix(0 + 0i, p, p)  # Complex matrix
   weight_sum = 0
-  
+
   # Determine frequency window
   freq_window = max(1, k - M):min(n, k + M)
-  
+
   for (j in freq_window) {
     weight = Kernel_func((k - j) / M)
     if (weight > 0) {
@@ -15,35 +15,35 @@ smoothed_spectral_density = function(JJ, k, m, Kernel_func = Kernel_Triangular) 
       weight_sum = weight_sum + weight
     }
   }
-  
-  # Normalize by sum of weights 
+
+  # Normalize by sum of weights
   if (weight_sum > 0) {
     S_k = S_k / weight_sum
   }
-  
+
   return(S_k)
 }
 
-return_max = function(x, m) {
+return_max = function(x, M) {
   max1 = which.max(x)
-  
+
   # Create a copy and set values within 2*M of max1 to -Inf
   x2 = x
   min_dist =  M
-  
+
   # Set forbidden region to -Inf
   forbidden_indices = max(1, max1 - min_dist):min(length(x), max1 + min_dist)
   x2[forbidden_indices] = -Inf
-  
+
   # Find second maximum (at least 2*M away)
   max2 = which.max(x2)
-  
+
   # Validity check of existing other point to prevent breakdown for M > n/4
   if (is.infinite(x2[max2])) {
     warning("No valid second maximum found at distance >= 2*M")
     return(c(max1, NA))
   }
-  
+
   return(c(max1, max2))
 }
 
@@ -64,10 +64,6 @@ sim.tvVAR = function(burnin, m, TV_size) {
   return(x2)
 }
 
-Kernel_Triangular=function(x)
-{
-  return(as.numeric(abs(x)<=1)*(1-abs(x)))
-}
 
 
 library(ggplot2)
@@ -76,7 +72,7 @@ R <- 500 # number of replications
 nu <- 2 # dimension of matrix
 p <- 3 # dimension of time series
 n <- 2^11
-M<-118
+M = best_M
 TV_size=0.6
 #m = 8
 
@@ -103,33 +99,33 @@ condition_number_smooth = numeric(n_freq)
 for (k in 1:n_freq) {
   # Periodogram matrix at frequency k
   I_k = outer(JJ[k, ], Conj(JJ[k, ]))
-  
+
   # Trace (sum of diagonal = total power)
   trace_periodogram[k] = sum(diag(I_k))
-  
+
   # Individual periodograms (diagonal elements)
   diag_periodograms[k, ] = diag(I_k)
-  
+
   # Eigenvalues for other metrics
   eigenvals = eigen(I_k, only.values = TRUE)$values
-  eigenvals = Re(eigenvals) 
-  
+  eigenvals = Re(eigenvals)
+
   largest_eigenvalue[k] = max(eigenvals)
   condition_number[k] = max(eigenvals) / (min(eigenvals) + 1e-10)
-  
+
   # Smoothed Periodogram (weighted by kernel)
   S_k = smoothed_spectral_density(JJ, k, M, Kernel_Triangular)
   # Smoothed Versions
   trace_smooth[k] = sum(diag(S_k))
   diag_smooth[k, ] = diag(S_k)
-  
+
   eigenvals_smooth = eigen(S_k, only.values = TRUE)$values
   eigenvals_smooth = Re(eigenvals_smooth)
   largest_eig_smooth[k] = max(eigenvals_smooth)
   condition_number_smooth[k] = max(eigenvals_smooth) / (min(eigenvals_smooth) + 1e-10)
 }
 
-frequencies = (1:n_freq) / n  
+frequencies = (1:n_freq) / n
 
 plot_data = data.frame(
   frequency = frequencies,
@@ -189,4 +185,6 @@ composite_smooth = trace_smooth / condition_number_smooth
 chosen_freq = return_max(composite_smooth , M)
 sort(composite_smooth, decreasing = TRUE )
 k_freq = chosen_freq / n
+candidate_k = chosen_freq
 
+ks = (k_freq * n) + (n/2)

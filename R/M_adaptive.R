@@ -1,9 +1,9 @@
 whittle_loss = function(S_hat, I_k) {
   S_hat = Re(S_hat)
-  
+
   # Regularization for invertibility if needed
   S_hat = S_hat + diag(1e-8, nrow(S_hat))
-  
+
   return( sum(diag(solve(S_hat) %*% I_k)) + log(det(S_hat)) )
 }
 
@@ -12,9 +12,9 @@ smoothed_spectral_density_LOO = function(JJ, k, M, Kernel_func = Kernel_Triangul
   p = ncol(JJ)
   S_k = matrix(0+0i, p, p)
   weight_sum = 0
-  
+
   freq_window = max(1, k - M):min(n, k + M)
-  
+
   for (j in freq_window) {
     if (j == leave_out) next
     weight = Kernel_func((k - j) / M)
@@ -24,12 +24,12 @@ smoothed_spectral_density_LOO = function(JJ, k, M, Kernel_func = Kernel_Triangul
       weight_sum = weight_sum + weight
     }
   }
-  
+
   if (weight_sum > 0) S_k = S_k / weight_sum
   return(S_k)
 }
 
-M_grid = unique(round(seq(1, 200, length.out = 100)))  
+M_grid = unique(round(seq(1, 2 * n^(1/8), length.out = 25)))
 n_freq = floor(nrow(JJ)/2)
 
 CV_scores = numeric(length(M_grid))
@@ -37,14 +37,14 @@ CV_scores = numeric(length(M_grid))
 for (m_index in seq_along(M_grid)) {
   M = M_grid[m_index]
   total_loss = 0
-  
+
   for (k in 1:n_freq) {
-    S_hat = smoothed_spectral_density_LOO(JJ, k, M, Kernel_Triangular, leave_out = k)
+    S_hat = smoothed_spectral_density_LOO(JJ, k, M, Kernel_Triangular, leave_out = ks[1])
     I_k   = outer(JJ[k,], Conj(JJ[k,]))
-    
+
     total_loss = total_loss + whittle_loss(S_hat, I_k)
   }
-  
+
   CV_scores[m_index] = total_loss
   cat("M =", M, "→ CV =", total_loss, "\n")
 }
@@ -58,3 +58,4 @@ for (k in 1:n_freq) {
   S_final[,,k] = smoothed_spectral_density(JJ, k, best_M, Kernel_Triangular)
 }
 
+M = best_M
