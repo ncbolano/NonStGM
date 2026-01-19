@@ -72,11 +72,11 @@ smoothed_spectral_density = function(JJ, k, M, Kernel_func = Kernel_Triangular) 
   freq_window = (k - M):(k + M)
 
   if (k - M < 1) {
-    JJ_smooth = rbind(JJ[((n-y):n),] , JJ[]) # Adding additional smoothing out of left edge case for the max M value of n^(1/2)
+    JJ_smooth = rbind(JJ[((n-y):n),] , JJ) # Adding additional smoothing out of left edge case for the max M value of n^(1/2)
     for (j in freq_window) {
-      weight = Kernel_func((k - j + y) / M)
+      weight = Kernel_func((k - j) / M)
       if (weight > 0) {
-        I_j = outer(JJ[j+y, ], Conj(JJ[j+y, ]))
+        I_j = outer(JJ_smooth[j+y, ], Conj(JJ_smooth[j+y, ]))
         S_k = S_k + weight * I_j
         weight_sum = weight_sum + weight
       }
@@ -91,15 +91,16 @@ smoothed_spectral_density = function(JJ, k, M, Kernel_func = Kernel_Triangular) 
         weight_sum = weight_sum + weight
       }
     }
+  }
 
     # Normalize by sum of weights
     if (weight_sum > 0) {
       S_k = S_k / weight_sum
-    }
+  }
 
     return(S_k)
-  }
 }
+
 
 return_max = function(x, M) {
   max1 = which.max(x)
@@ -194,7 +195,7 @@ JJ = rbind(JJ0[backward, ], JJ0[c(1:(n_rows / 2)), ])
 # Need to append small amount at front and at end to account for max M testing size
 # Need to ensure that M is at least c * coefnum
 
-M_initial = unique(n^(1/4))
+M_initial = 2 * coefnum
 
 n_freq = floor(nrow(JJ) / 2)
 
