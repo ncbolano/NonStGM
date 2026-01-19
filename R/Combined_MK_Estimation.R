@@ -1,4 +1,3 @@
-
 source('KernelWeights.R')
 sim.tvVAR = function(burnin, m, TV_size) {
   A = matrix(c(0.5, 0.2, 0, 0, 0.8, 0, 0, 0.3, 0.6), ncol = 3, byrow = T)
@@ -69,23 +68,37 @@ smoothed_spectral_density = function(JJ, k, M, Kernel_func = Kernel_Triangular) 
   S_k = matrix(0 + 0i, p, p)  # Complex matrix
   weight_sum = 0
 
-  freq_window = max(1, k - M):min(n, k + M)
+  y = floor(n^(1/2))
+  freq_window = (k - M):(k + M)
 
-  for (j in freq_window) {
-    weight = Kernel_func((k - j) / M)
-    if (weight > 0) {
-      I_j = outer(JJ[j, ], Conj(JJ[j, ]))
-      S_k = S_k + weight * I_j
-      weight_sum = weight_sum + weight
+  if (k - M < 1) {
+    JJ_smooth = rbind(JJ[((n-y):n),] , JJ[]) # Adding additional smoothing out of left edge case for the max M value of n^(1/2)
+    for (j in freq_window) {
+      weight = Kernel_func((k - j + y) / M)
+      if (weight > 0) {
+        I_j = outer(JJ[j+y, ], Conj(JJ[j+y, ]))
+        S_k = S_k + weight * I_j
+        weight_sum = weight_sum + weight
+      }
     }
   }
+  else {
+    for (j in freq_window) {
+      weight = Kernel_func((k - j) / M)
+      if (weight > 0) {
+        I_j = outer(JJ[j, ], Conj(JJ[j, ]))
+        S_k = S_k + weight * I_j
+        weight_sum = weight_sum + weight
+      }
+    }
 
-  # Normalize by sum of weights
-  if (weight_sum > 0) {
-    S_k = S_k / weight_sum
+    # Normalize by sum of weights
+    if (weight_sum > 0) {
+      S_k = S_k / weight_sum
+    }
+
+    return(S_k)
   }
-
-  return(S_k)
 }
 
 return_max = function(x, M) {
@@ -140,7 +153,7 @@ local_M_selection = function(JJ, k, M_grid) {
 }
 
 # R = 500
-# nu = 2
+nu = 2
 p = 3
 Kernel = 'Kernel_Triangular'
 # alpha = .05
@@ -154,33 +167,34 @@ n_rows = nrow(x)
 backward = c(((n_rows / 2) + 1):n_rows)
 JJ = rbind(JJ0[backward, ], JJ0[c(1:(n_rows / 2)), ])
 
-frequencies = (1:n_freq) / n
-plot_data_smooth = data.frame(
-  frequency = frequencies,
-  trace = Re(trace_smooth),
-  var1 = Re(diag_smooth[, 1]),
-  var2 = Re(diag_smooth[, 2]),
-  var3 = Re(diag_smooth[, 3]),
-  largest_eig = largest_eig_smooth,
-  cond_num = condition_number_smooth
-)
+# frequencies = (1:n_freq)
+# plot_data_smooth = data.frame(
+#   frequency = frequencies,
+#   trace = Re(trace_smooth),
+#   var1 = Re(diag_smooth[, 1]),
+#   var2 = Re(diag_smooth[, 2]),
+#   var3 = Re(diag_smooth[, 3]),
+#   largest_eig = largest_eig_smooth,
+#   cond_num = condition_number_smooth
+# )
+#
+# p1_smooth = ggplot(plot_data_smooth, aes(x = frequency, y = trace)) +
+#   geom_line(color = "darkgreen", linewidth = 0.8) +
+#   labs(
+#     title = "Trace of Smoothed Spectral Density Matrix",
+#     subtitle = "Total power across all 3 variables (kernel-smoothed)",
+#     x = "Frequency (cycles per observation)",
+#     y = "Trace(S(ω))"
+#   ) +
+#   theme_minimal() +
+#   theme(plot.title = element_text(face = "bold"))
+#
+# print(p1_smooth)
 
-p1_smooth = ggplot(plot_data_smooth, aes(x = frequency, y = trace)) +
-  geom_line(color = "darkgreen", linewidth = 0.8) +
-  labs(
-    title = "Trace of Smoothed Spectral Density Matrix",
-    subtitle = "Total power across all 3 variables (kernel-smoothed)",
-    x = "Frequency (cycles per observation)",
-    y = "Trace(S(ω))"
-  ) +
-  theme_minimal() +
-  theme(plot.title = element_text(face = "bold"))
-
-print(p1_smooth)
 # Need to append small amount at front and at end to account for max M testing size
 # Need to ensure that M is at least c * coefnum
-M_initial = unique(n^(1/4))
 
+M_initial = unique(n^(1/4))
 
 n_freq = floor(nrow(JJ) / 2)
 
@@ -202,7 +216,7 @@ for (k in 1:n_freq) {
   condition_number_smooth[k] = max(eigenvals_smooth) / (min(eigenvals_smooth) + 1e-10)
 }
 
-composite_smooth = trace_smooth / condition_number_smooth
+composite_smooth = trace_smooth / condition_number_smooth # From frequency 1:(n/2)
 chosen_frequencies = return_max(composite_smooth , M_initial)
 k = chosen_frequencies
 
@@ -214,3 +228,5 @@ M_grid = unique(round(seq(max(coefnum , n^(1/5)), n^(1/2), length.out = 50)))
 
 CV_scores = numeric(length(M_grid))
 M_list = local_M_selection(JJ, k, M_grid)
+
+
