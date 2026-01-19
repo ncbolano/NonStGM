@@ -125,6 +125,29 @@ return_max = function(x, M) {
   return(c(max1, max2))
 }
 
+extractK = function(JJ,coefnum) {
+  M_initial = 2 * coefnum
+  n_freq = floor(nrow(JJ) / 2)
+
+  for (k in 1:n_freq) {
+
+    # Smoothed Periodogram (weighted by kernel)
+    S_k = smoothed_spectral_density(JJ, k, M_initial, Kernel_Triangular)
+    trace_smooth[k] = sum(diag(S_k))
+    diag_smooth[k, ] = diag(S_k)
+
+    eigenvals_smooth = eigen(S_k, only.values = TRUE)$values
+    eigenvals_smooth = Re(eigenvals_smooth)
+    largest_eig_smooth[k] = max(eigenvals_smooth)
+    condition_number_smooth[k] = max(eigenvals_smooth) / (min(eigenvals_smooth) + 1e-10)
+  }
+
+  composite_smooth = trace_smooth / condition_number_smooth # From frequency 1:(n/2)
+  chosen_frequencies = return_max(composite_smooth , M_initial)
+  k = chosen_frequencies
+  return(k)
+}
+
 local_M_selection = function(JJ, k, M_grid) {
 
   best_local_M = numeric(length = length(k))
@@ -153,6 +176,13 @@ local_M_selection = function(JJ, k, M_grid) {
   return(best_local_M)
 }
 
+extractM = function(JJ,k,coefnum) {
+  n = nrow(JJ)
+  M_grid = unique(round(seq(max(coefnum , n^(1/5)), n^(1/2), length.out = 50)))
+  M_list = local_M_selection(JJ, k, M_grid)
+
+  return(M_list)
+}
 # R = 500
 nu = 2
 p = 3
@@ -226,8 +256,9 @@ coefnum = (2 * p * nu) + p - 1
 M_grid = unique(round(seq(max(coefnum , n^(1/5)), n^(1/2), length.out = 50)))
 
 
-
 CV_scores = numeric(length(M_grid))
 M_list = local_M_selection(JJ, k, M_grid)
+
+
 
 
