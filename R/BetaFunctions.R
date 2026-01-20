@@ -21,9 +21,9 @@ beta = function(J, k, nu,W, M, a, delta) {
   return(beta_beta_r(betaC,nu,ncol(J)))
 }
 
-beta_beta_r=function(beta,nu,p)
+beta_beta_r = function(beta,nu,p)
 {
-  tmp1=as.vector(unlist(sapply((-nu):nu,function(i)
+  tmp1 = as.vector(unlist(sapply((-nu):nu,function(i)
   {
     if(i==0)
       return(
@@ -39,55 +39,26 @@ beta_beta_r=function(beta,nu,p)
       )
   }
   )))
-  tmp2=seq_along(beta)
-  beta_erg=beta
-  beta_erg[tmp2!=tmp1]=((beta+Conj(beta[tmp1]))[tmp2!=tmp1])/2
+  tmp2 = seq_along(beta)
+  beta_erg = beta
+  beta_erg[tmp2!=tmp1] = ((beta+Conj(beta[tmp1]))[tmp2!=tmp1])/2
   return(beta_erg)
 }
 
-
-# beta_cv=function(J, k, nu, M_grid, a, delta)
-# {
-#   n_points=floor(max(M_grid)/(2*nu+1)/3)
-#   tmp=sapply(M_grid,function(M)
-#   {
-#     J_tmp=J
-#     #Computational less demanding; one beta for all left out frequencies
-#     #more demanding, each left ouf beta gets its own frequency
-#     J_tmp[k+(-n_points):n_points*(2*nu+1),a]=0
-#     beta_tmp=beta(J_tmp,k,nu,M,a,delta)
-#     beta_tmp2=beta(J,k,nu,M,a,delta)
-#     Eval=sapply(k+(-n_points):n_points*(2*nu+1),function(k_i)
-#     {
-#       J[k_i, a]-J.to.J.k.nu.a(J, k_i, nu, a)%*%Conj(beta_tmp)
-#     })
-#     # Eval2=sapply(k+(-n_points):n_points*(2*nu+1),function(k_i)
-#     # {
-#     #   J[k_i, a]-J.to.J.k.nu.a(J, k_i, nu, a)%*%Conj(beta_tmp2)
-#     # })
-#     # return(mean(abs(Eval)^2)/mean(abs(Eval2)^2))
-#     return(mean(abs(Eval)^2))
-#   })
-#   names(tmp)=M_grid
-#   return(tmp)
-# }
-
-
-beta_cv2=function(J, k, nu,W, M_grid, a, delta)
+beta_cv2 = function(J, k, nu,W, M_grid, a, delta)
 {
-  n_points=floor(median(M_grid)/(2*nu+1))
-  tmp=sapply(M_grid,function(M)
+  n_points = floor(median(M_grid)/(2*nu+1))
+  tmp = sapply(M_grid,function(M)
   {
-    J_tmp=J
+    J_tmp = J
     #Computational less demanding; one beta for all left out frequencies
     #more demanding, each left ouf beta gets its own frequency
-    Eval=sapply(k+(-n_points):n_points*(2*nu+1),function(k_i)
+    Eval= sapply(k+(-n_points):n_points*(2*nu+1),function(k_i)
     {
-      J_tmp[k_i,a]=0
-      HatR <- Hat.R.reduced(J, k_i, nu,W, M, a)
-      hatr <- Hat.r(J_tmp, k_i, nu,W, M, a)
-      beta_tmp <- solve(a = HatR,b = hatr)
-      # =beta(J_tmp,k_i,nu,M,a,delta)
+      J_tmp[k_i,a] = 0
+      HatR = Hat.R.reduced(J, k_i, nu,W, M, a)
+      hatr = Hat.r(J_tmp, k_i, nu,W, M, a)
+      beta_tmp = solve(a = HatR,b = hatr)
       J[k_i, a]-J.to.J.k.nu.a(J, k_i, nu, a)%*%Conj(beta_tmp)
     })
     return(mean(abs(Eval)^2))

@@ -29,6 +29,7 @@ Hat.R = function(J, k, nu, W, M) {
 #' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
 #' @param W weight Kernel chosen from (Uniform , Triangular, Quadratic)
 #' @param M1 scalar smoothing value
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
 #' @return
 #' @noRd
 Hat.R.reduced = function(J, k, nu, W,M1, a) {
@@ -52,6 +53,7 @@ Hat.R.reduced = function(J, k, nu, W,M1, a) {
 #' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
 #' @param W weight Kernel chosen from (Uniform , Triangular, Quadratic)
 #' @param M scalar smoothing value
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
 #' @return
 #' @noRd
 Hat.r = function(J, k, nu,W, M, a) {
@@ -68,3 +70,4 @@ Hat.r = function(J, k, nu,W, M, a) {
   norm=sum(sapply((-M:M),function(s) W(s/M)))
   return(r_nu_M / norm)
 }
+

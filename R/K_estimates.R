@@ -72,7 +72,7 @@ R <- 500 # number of replications
 nu <- 2 # dimension of matrix
 p <- 3 # dimension of time series
 n <- 2^11
-M = best_M
+M = 30
 TV_size=0.6
 #m = 8
 
@@ -176,9 +176,9 @@ p1_smooth = ggplot(plot_data_smooth, aes(x = frequency, y = trace)) +
 print(p1_smooth)
 
 
-composite_value = trace_periodogram / condition_number
-print(sort(composite_value))
-which.max(composite_value)
+#composite_value = trace_periodogram / condition_number
+#print(sort(composite_value))
+#which.max(composite_value)
 
 
 composite_smooth = trace_smooth / condition_number_smooth
