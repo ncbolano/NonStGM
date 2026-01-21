@@ -1,5 +1,3 @@
-source('KernelWeights.R')
-
 #' Transformation of frequencies (excluding a single index)
 #'
 #' @param J P-dimensional discrete fourier transform
@@ -70,6 +68,7 @@ smoothed_spectral_density_LOO = function(JJ, k, M, Kernel_func = Kernel_Triangul
   if (weight_sum > 0) S_k = S_k / weight_sum
   return(S_k)
 }
+
 #' Transformation of frequencies (excluding a single index)
 #'
 #' @param J P-dimensional discrete fourier transform
@@ -116,6 +115,7 @@ smoothed_spectral_density = function(JJ, k, M, Kernel_func = Kernel_Triangular) 
 
     return(S_k)
 }
+
 #' Transformation of frequencies (excluding a single index)
 #'
 #' @param J P-dimensional discrete fourier transform
@@ -166,7 +166,7 @@ extractK = function(JJ,coefnum) {
   for (k in 1:n_freq) {
 
     # Smoothed Periodogram (weighted by kernel)
-    S_k = smoothed_spectral_density(JJ, k, M_initial, Kernel_Triangular)
+    S_k = Re(smoothed_spectral_density(JJ, k, M_initial, Kernel_Triangular))
     trace_smooth[k] = sum(diag(S_k))
     diag_smooth[k, ] = diag(S_k)
 
@@ -232,19 +232,19 @@ extractM = function(JJ,k,coefnum) {
   return(M_list)
 }
 # R = 500
-nu = 2
-p = 3
-Kernel = 'Kernel_Triangular'
-# alpha = .05
-burnin = 200
-n = 2^11
-TV_size = .6
-
-x = sim.tvVAR(burnin = 20, m = n, TV_size = TV_size)
-JJ0 = mvfft(x) / sqrt(nrow(x))
-n_rows = nrow(x)
-backward = c(((n_rows / 2) + 1):n_rows)
-JJ = rbind(JJ0[backward, ], JJ0[c(1:(n_rows / 2)), ])
+# nu = 2
+# p = 3
+# Kernel = 'Kernel_Triangular'
+# # alpha = .05
+# burnin = 200
+# n = 2^11
+# TV_size = .6
+#
+# x = sim.tvVAR(burnin = 20, m = n, TV_size = TV_size)
+# JJ0 = mvfft(x) / sqrt(nrow(x))
+# n_rows = nrow(x)
+# backward = c(((n_rows / 2) + 1):n_rows)
+# JJ = rbind(JJ0[backward, ], JJ0[c(1:(n_rows / 2)), ])
 
 # frequencies = (1:n_freq)
 # plot_data_smooth = data.frame(
@@ -273,39 +273,39 @@ JJ = rbind(JJ0[backward, ], JJ0[c(1:(n_rows / 2)), ])
 # Need to append small amount at front and at end to account for max M testing size
 # Need to ensure that M is at least c * coefnum
 
-M_initial = 2 * coefnum
-
-n_freq = floor(nrow(JJ) / 2)
-
-trace_smooth = numeric(n_freq)
-diag_smooth = matrix(0, nrow = n_freq, ncol = 3)
-largest_eig_smooth = numeric(n_freq)
-condition_number_smooth = numeric(n_freq)
-
-for (k in 1:n_freq) {
-
-  # Smoothed Periodogram (weighted by kernel)
-  S_k = smoothed_spectral_density(JJ, k, M_initial, Kernel_Triangular)
-  trace_smooth[k] = sum(diag(S_k))
-  diag_smooth[k, ] = diag(S_k)
-
-  eigenvals_smooth = eigen(S_k, only.values = TRUE)$values
-  eigenvals_smooth = Re(eigenvals_smooth)
-  largest_eig_smooth[k] = max(eigenvals_smooth)
-  condition_number_smooth[k] = max(eigenvals_smooth) / (min(eigenvals_smooth) + 1e-10)
-}
-
-composite_smooth = trace_smooth / condition_number_smooth # From frequency 1:(n/2)
-chosen_frequencies = return_max(composite_smooth , M_initial)
-k = chosen_frequencies
-
-# End of chosen list of two k frequencies
-coefnum = (2 * p * nu) + p - 1
-M_grid = unique(round(seq(max(coefnum , n^(1/5)), n^(1/2), length.out = 50)))
-
-
-CV_scores = numeric(length(M_grid))
-M_list = local_M_selection(JJ, k, M_grid)
+# M_initial = 2 * coefnum
+#
+# n_freq = floor(nrow(JJ) / 2)
+#
+# trace_smooth = numeric(n_freq)
+# diag_smooth = matrix(0, nrow = n_freq, ncol = 3)
+# largest_eig_smooth = numeric(n_freq)
+# condition_number_smooth = numeric(n_freq)
+#
+# for (k in 1:n_freq) {
+#
+#   # Smoothed Periodogram (weighted by kernel)
+#   S_k = smoothed_spectral_density(JJ, k, M_initial, Kernel_Triangular)
+#   trace_smooth[k] = sum(diag(S_k))
+#   diag_smooth[k, ] = diag(S_k)
+#
+#   eigenvals_smooth = eigen(S_k, only.values = TRUE)$values
+#   eigenvals_smooth = Re(eigenvals_smooth)
+#   largest_eig_smooth[k] = max(eigenvals_smooth)
+#   condition_number_smooth[k] = max(eigenvals_smooth) / (min(eigenvals_smooth) + 1e-10)
+# }
+#
+# composite_smooth = trace_smooth / condition_number_smooth # From frequency 1:(n/2)
+# chosen_frequencies = return_max(composite_smooth , M_initial)
+# k = chosen_frequencies
+#
+# # End of chosen list of two k frequencies
+# coefnum = (2 * p * nu) + p - 1
+# M_grid = unique(round(seq(max(coefnum , n^(1/5)), n^(1/2), length.out = 50)))
+#
+#
+# CV_scores = numeric(length(M_grid))
+# M_list = local_M_selection(JJ, k, M_grid)
 
 
 
