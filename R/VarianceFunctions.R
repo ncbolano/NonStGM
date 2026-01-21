@@ -1,3 +1,11 @@
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 variance.estimator.Re.v2 = function(J, k, nu, M, a, L, delta) {
   betaC = beta(J, k, nu, M, a, delta)
   dim1 = length(betaC)
@@ -37,7 +45,14 @@ variance.estimator.Re.v2 = function(J, k, nu, M, a, L, delta) {
 
   return(sigmaRe)
 }
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 variance.estimator.Im.v2 = function(J, k, nu, M, a, L, delta) {
   betaC = beta(J, k, nu, M, a, delta)
   dim1 = length(betaC)
@@ -78,7 +93,14 @@ variance.estimator.Im.v2 = function(J, k, nu, M, a, L, delta) {
   return(sigmaIm)
 }
 
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 variance.estimator.v2 = function(J, k, nu,W, M, a, L, delta) {
   betaC = beta(J, k, nu, W,M, a, delta)
   dim1 = length(betaC)

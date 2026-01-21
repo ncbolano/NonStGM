@@ -27,7 +27,14 @@ beta = function(J, k, nu, W, M, a, delta) {
   betaC = solve(a = HatR,b = hatr)
   return(beta_beta_r(betaC,nu,ncol(J)))
 }
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 beta_beta_r = function(beta,nu,p)
 {
   tmp1 = as.vector(unlist(sapply((-nu):nu,function(i)
@@ -51,7 +58,14 @@ beta_beta_r = function(beta,nu,p)
   beta_erg[tmp2!=tmp1] = ((beta+Conj(beta[tmp1]))[tmp2!=tmp1])/2
   return(beta_erg)
 }
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 beta_cv2 = function(J, k, nu,W, M_grid, a, delta)
 {
   n_points = floor(median(M_grid)/(2*nu+1))

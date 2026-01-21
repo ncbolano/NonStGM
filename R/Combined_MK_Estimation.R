@@ -1,21 +1,13 @@
 source('KernelWeights.R')
-sim.tvVAR = function(burnin, m, TV_size) {
-  A = matrix(c(0.5, 0.2, 0, 0, 0.8, 0, 0, 0.3, 0.6), ncol = 3, byrow = T)
-  n = m + burnin
-  p = 3
-  x = matrix(rnorm(n * p), ncol = p)
-  x1 = x
-  st = 0.3 + TV_size * (1 + exp(0.005 * (c(1:n) - (n / 2))))^(-1)
-  for (tt in (2:n)) {
-    A.t = A
-    A.t[1, 1] = st[tt]  # Fixed indexing
-    temp = A.t %*% matrix(x1[tt - 1, ], ncol = 1) + matrix(x[tt, ], ncol = 1)
-    x1[tt, ] = c(temp)
-  }
-  x2 = x1[-c(1:burnin), ]
-  return(x2)
-}
 
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 r_to_loc = function(r, c, a, nu, p) {
   if (r < 0) {
     return(p * (r + nu) + c)
@@ -30,7 +22,16 @@ r_to_loc = function(r, c, a, nu, p) {
     return(p * nu + (p - 1) + (r - 1) * p + c)
   }
 }
-.
+
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
+#'
 whittle_loss = function(S_hat, I_k) {
   S_hat = Re(S_hat)
 
@@ -39,7 +40,15 @@ whittle_loss = function(S_hat, I_k) {
 
   return( sum(diag(solve(S_hat) %*% I_k)) + log(det(S_hat)) )
 }
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
+#'
 smoothed_spectral_density_LOO = function(JJ, k, M, Kernel_func = Kernel_Triangular, leave_out = k) {
   n = nrow(JJ)
   p = ncol(JJ)
@@ -61,7 +70,14 @@ smoothed_spectral_density_LOO = function(JJ, k, M, Kernel_func = Kernel_Triangul
   if (weight_sum > 0) S_k = S_k / weight_sum
   return(S_k)
 }
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 smoothed_spectral_density = function(JJ, k, M, Kernel_func = Kernel_Triangular) {
   n = nrow(JJ)
   p = ncol(JJ)
@@ -100,8 +116,14 @@ smoothed_spectral_density = function(JJ, k, M, Kernel_func = Kernel_Triangular) 
 
     return(S_k)
 }
-
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 return_max = function(x, M) {
   max1 = which.max(x)
 
@@ -124,7 +146,14 @@ return_max = function(x, M) {
 
   return(c(max1, max2))
 }
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 extractK = function(JJ,coefnum) {
   M_initial = 2 * coefnum
   n_freq = floor(nrow(JJ) / 2)
@@ -152,7 +181,14 @@ extractK = function(JJ,coefnum) {
   k = chosen_frequencies
   return(k)
 }
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 local_M_selection = function(JJ, k, M_grid) {
 
   best_local_M = numeric(length = length(k))
@@ -180,7 +216,14 @@ local_M_selection = function(JJ, k, M_grid) {
   print(best_local_M)
   return(best_local_M)
 }
-
+#' Transformation of frequencies (excluding a single index)
+#'
+#' @param J P-dimensional discrete fourier transform
+#' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @return
+#' @noRd
 extractM = function(JJ,k,coefnum) {
   n = nrow(JJ)
   M_grid = unique(round(seq(max(coefnum , n^(1/5)), n^(1/2), length.out = 50)))
