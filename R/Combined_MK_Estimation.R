@@ -129,6 +129,11 @@ extractK = function(JJ,coefnum) {
   M_initial = 2 * coefnum
   n_freq = floor(nrow(JJ) / 2)
 
+  trace_smooth = numeric(n_freq)
+  diag_smooth = matrix(0, nrow = n_freq, ncol = ncol(JJ)) # Matrix for diagonal elements
+  largest_eig_smooth = numeric(n_freq)
+  condition_number_smooth = numeric(n_freq)
+
   for (k in 1:n_freq) {
 
     # Smoothed Periodogram (weighted by kernel)
