@@ -30,7 +30,7 @@ r_to_loc = function(r, c, a, nu, p) {
     return(p * nu + (p - 1) + (r - 1) * p + c)
   }
 }
-
+.
 whittle_loss = function(S_hat, I_k) {
   S_hat = Re(S_hat)
 

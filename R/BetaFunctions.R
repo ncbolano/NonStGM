@@ -8,14 +8,21 @@
 #' @param a scalar index value which determines removal of specific index from local DFT matrix
 #' @return
 #' @noRd
-beta = function(J, k, nu,W, M, a, delta) {
-  HatR = Hat.R.reduced(J, k, nu, W,M, a)
+beta = function(J, k, nu, W, M, a, delta) {
+  HatR = Hat.R.reduced(J, k, nu, W, M, a)
   if(delta>0)
   {
     dim1 = ncol(HatR)
     HatR = HatR+ diag(rep(delta, dim1))
 
   }
+  # Added check
+  if (rcond(HatR) < .Machine$double.eps) {
+    p = ncol(J)
+    len_out = p * (2 * nu + 1) - 1
+    return(rep(NA, len_out))
+  }
+
   hatr = Hat.r(J, k, nu, W,M, a)
   betaC = solve(a = HatR,b = hatr)
   return(beta_beta_r(betaC,nu,ncol(J)))
