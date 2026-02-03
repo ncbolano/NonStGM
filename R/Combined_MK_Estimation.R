@@ -38,6 +38,28 @@ whittle_loss = function(S_hat, I_k) {
 
   return( sum(diag(solve(S_hat) %*% I_k)) + log(det(S_hat)) )
 }
+# smoothed_spectral_density_LOO = function(JJ, k, M, Kernel_func = Kernel_Triangular, leave_out = k) {
+#   n = nrow(JJ)
+#   p = ncol(JJ)
+#   S_k = matrix(0+0i, p, p)
+#   weight_sum = 0
+#
+#   freq_window = max(1, k - M):min(n, k + M)
+#
+#   for (j in freq_window) {
+#     if (j == leave_out) next
+#     weight = Kernel_func((k - j) / M)
+#     if (weight > 0) {
+#       I_j = outer(JJ[j,], Conj(JJ[j,]))
+#       S_k = S_k + weight * I_j
+#       weight_sum = weight_sum + weight
+#     }
+#   }
+#
+#   if (weight_sum > 0) S_k = S_k / weight_sum
+#   return(S_k)
+# }
+
 #' Transformation of frequencies (excluding a single index)
 #'
 #' @param J P-dimensional discrete fourier transform
@@ -46,29 +68,31 @@ whittle_loss = function(S_hat, I_k) {
 #' @param a scalar index value which determines removal of specific index from local DFT matrix
 #' @return
 #' @noRd
-#'
 smoothed_spectral_density_LOO = function(JJ, k, M, Kernel_func = Kernel_Triangular, leave_out = k) {
-  n = nrow(JJ)
-  p = ncol(JJ)
-  S_k = matrix(0+0i, p, p)
-  weight_sum = 0
+n = nrow(JJ)
+p = ncol(JJ)
+S_k = matrix(0+0i, p, p)
+weight_sum = 0
 
-  freq_window = max(1, k - M):min(n, k + M)
+for (j_offset in -M:M) {
+  current_j = k + j_offset
 
-  for (j in freq_window) {
-    if (j == leave_out) next
-    weight = Kernel_func((k - j) / M)
-    if (weight > 0) {
-      I_j = outer(JJ[j,], Conj(JJ[j,]))
-      S_k = S_k + weight * I_j
-      weight_sum = weight_sum + weight
-    }
+  idx = ((current_j - 1) %% n) + 1
+
+  if (idx == leave_out) next
+
+  weight = Kernel_func(j_offset / M)
+
+  if (weight > 0) {
+    I_j = outer(JJ[idx, ], Conj(JJ[idx, ]))
+    S_k = S_k + weight * I_j
+    weight_sum = weight_sum + weight
   }
-
-  if (weight_sum > 0) S_k = S_k / weight_sum
-  return(S_k)
 }
 
+if (weight_sum > 0) S_k = S_k / weight_sum
+return(S_k)
+}
 #' Transformation of frequencies (excluding a single index)
 #'
 #' @param J P-dimensional discrete fourier transform
@@ -80,41 +104,67 @@ smoothed_spectral_density_LOO = function(JJ, k, M, Kernel_func = Kernel_Triangul
 smoothed_spectral_density = function(JJ, k, M, Kernel_func = Kernel_Triangular) {
   n = nrow(JJ)
   p = ncol(JJ)
-  S_k = matrix(0 + 0i, p, p)  # Complex matrix
+  S_k = matrix(0 + 0i, p, p)
   weight_sum = 0
 
-  y = floor(n^(1/2))
-  freq_window = (k - M):(k + M)
+  for (j_offset in -M:M) {
+    current_j = k + j_offset
 
-  if (k - M < 1) {
-    JJ_smooth = rbind(JJ[((n-y):n),] , JJ) # Adding additional smoothing out of left edge case for the max M value of n^(1/2)
-    for (j in freq_window) {
-      weight = Kernel_func((k - j) / M)
-      if (weight > 0) {
-        I_j = outer(JJ_smooth[j+y, ], Conj(JJ_smooth[j+y, ]))
-        S_k = S_k + weight * I_j
-        weight_sum = weight_sum + weight
-      }
-    }
-  }
-  else {
-    for (j in freq_window) {
-      weight = Kernel_func((k - j) / M)
-      if (weight > 0) {
-        I_j = outer(JJ[j, ], Conj(JJ[j, ]))
-        S_k = S_k + weight * I_j
-        weight_sum = weight_sum + weight
-      }
+    idx = ((current_j - 1) %% n) + 1
+
+    weight = Kernel_func(j_offset / M)
+
+    if (weight > 0) {
+      I_j = outer(JJ[idx, ], Conj(JJ[idx, ]))
+      S_k = S_k + weight * I_j
+      weight_sum = weight_sum + weight
     }
   }
 
-    # Normalize by sum of weights
-    if (weight_sum > 0) {
-      S_k = S_k / weight_sum
+  if (weight_sum > 0) {
+    S_k = S_k / weight_sum
   }
 
-    return(S_k)
+  return(S_k)
 }
+# smoothed_spectral_density = function(JJ, k, M, Kernel_func = Kernel_Triangular) {
+#   n = nrow(JJ)
+#   p = ncol(JJ)
+#   S_k = matrix(0 + 0i, p, p)  # Complex matrix
+#   weight_sum = 0
+#
+#   y = floor(n^(1/2))
+#   freq_window = (k - M):(k + M)
+#
+#   if (k - M < 1) {
+#     JJ_smooth = rbind(JJ[((n-y):n),] , JJ) # Adding additional smoothing out of left edge case for the max M value of n^(1/2)
+#     for (j in freq_window) {
+#       weight = Kernel_func((k - j) / M)
+#       if (weight > 0) {
+#         I_j = outer(JJ_smooth[j+y, ], Conj(JJ_smooth[j+y, ]))
+#         S_k = S_k + weight * I_j
+#         weight_sum = weight_sum + weight
+#       }
+#     }
+#   }
+#   else {
+#     for (j in freq_window) {
+#       weight = Kernel_func((k - j) / M)
+#       if (weight > 0) {
+#         I_j = outer(JJ[j, ], Conj(JJ[j, ]))
+#         S_k = S_k + weight * I_j
+#         weight_sum = weight_sum + weight
+#       }
+#     }
+#   }
+#
+#     # Normalize by sum of weights
+#     if (weight_sum > 0) {
+#       S_k = S_k / weight_sum
+#   }
+#
+#     return(S_k)
+# }
 
 #' Transformation of frequencies (excluding a single index)
 #'
