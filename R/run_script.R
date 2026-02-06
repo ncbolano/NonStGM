@@ -1,12 +1,8 @@
 # Required Packages
-require(tidyverse)
-#require(doParallel)
-require(dplyr)
-require(ggplot2)
-require(tidygraph)
-require(ggraph)
-require(dplyr)
-require(qgraph)
+if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load(tidyverse, dplyr, ggplot2, tidygraph, ggraph)
+
 
 # Complete run-through (req. functions)
 source('extractVariables.R')

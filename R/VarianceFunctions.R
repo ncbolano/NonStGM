@@ -81,6 +81,7 @@ variance.estimator.Im.v2 = function(J, k, nu, M, a, L, delta) {
   }
 
   sigma2 = matrix(rep(0, dim1**2), ncol = dim1)
+  n = nrow(J)
   k1 = (k - n / 2 - 1)
   for (s1 in (-M:M)) {
     for (s2 in (-M:M)) {
