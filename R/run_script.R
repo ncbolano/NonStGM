@@ -20,7 +20,6 @@ alpha = .01
 
 NonStGM = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = 0.05) {
 
-  # Convert Kernel string to actual function
   Kernel_function = get(Kernel)
 
   # Load DFT, dimension variables, coefficient number
@@ -34,7 +33,6 @@ NonStGM = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = 0.05)
   M_grid = unique(round(seq(max(coefnum, (n)^(1/5)), (n)^(1/2), length.out = 50)))
   M_list = local_M_selection(J, k, M_grid)
 
-  # Load empty arrays
   n_k = length(k)
   betaCoefAll = array(0, c(n_k, coefnum, p))
   varbeta = array(0, c(n_k, coefnum, 2, p))
@@ -96,11 +94,33 @@ NonStGM = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = 0.05)
     distinct(node1, node2) |>
     arrange(node1, node2)
 
+  # Separate self-loops from regular edges
+  self_loops = significant_edges |> filter(node1 == node2)
+  regular_edges = significant_edges |> filter(node1 != node2)
+
+  # Create the network graph
+  nodes = tibble(name = 1:3)  # Adjust to your actual number of nodes (p)
+
+  graph = tbl_graph(nodes = nodes, edges = regular_edges, directed = FALSE)
+
+  # Plot
+  ggraph(graph, layout = 'circle') +
+    # Draw edges between different nodes
+    geom_edge_link(color = "black", width = 1) +
+    # Draw nodes
+    geom_node_point(size = 20, color = "white", fill = "lightblue", shape = 21, stroke = 2) +
+    # Add node labels (numbers)
+    geom_node_text(aes(label = name), size = 6, fontface = "bold") +
+    # Manually add dashed circles for self-loops
+    geom_node_point(data = . %>% filter(name %in% self_loops$node1),
+                    size = 20, color = "black", fill = NA , shape = 21, stroke = 2) +
+    theme_void() +
+    coord_fixed()
+
   return(significant_edges)
 }
 
-hi2 = NonStGM(x,"Kernel_Quadtratic", 2 , 2 , alpha = .01)
-
+significant_edges = NonStGM(x,"Kernel_Quadtratic", 2 , 1 , alpha = .01)
 
 # Separate self-loops from regular edges
 self_loops = significant_edges |> filter(node1 == node2)
