@@ -86,36 +86,13 @@ NonStGM = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = 0.05)
 
   # Extract sets of unique significant pairs with adjusted p value less than alpha
   significant_edges = Test_tibble |>
-    filter(padjust < alpha) |>
-    mutate(
+    dplyr::filter(padjust < alpha) |>
+    dplyr::mutate(
       node1 = pmin(a, c),
       node2 = pmax(a, c)
     ) |>
-    distinct(node1, node2) |>
-    arrange(node1, node2)
-
-  # Separate self-loops from regular edges
-  self_loops = significant_edges |> filter(node1 == node2)
-  regular_edges = significant_edges |> filter(node1 != node2)
-
-  # Create the network graph
-  nodes = tibble(name = 1:3)  # Adjust to your actual number of nodes (p)
-
-  graph = tbl_graph(nodes = nodes, edges = regular_edges, directed = FALSE)
-
-  # Plot
-  ggraph(graph, layout = 'circle') +
-    # Draw edges between different nodes
-    geom_edge_link(color = "black", width = 1) +
-    # Draw nodes
-    geom_node_point(size = 20, color = "white", fill = "lightblue", shape = 21, stroke = 2) +
-    # Add node labels (numbers)
-    geom_node_text(aes(label = name), size = 6, fontface = "bold") +
-    # Manually add dashed circles for self-loops
-    geom_node_point(data = . %>% filter(name %in% self_loops$node1),
-                    size = 20, color = "black", fill = NA , shape = 21, stroke = 2) +
-    theme_void() +
-    coord_fixed()
+    dplyr::distinct(node1, node2) |>
+    dplyr::arrange(node1, node2)
 
   return(significant_edges)
 }
@@ -230,3 +207,37 @@ ggraph(graph, layout = 'circle') +
 #   }
 #
 # }
+
+plot_network = function(significant_edges, p, title = "Network Graph") {
+  # Separate self-loops from regular edges
+  self_loops = significant_edges |> filter(node1 == node2)
+  regular_edges = significant_edges |> filter(node1 != node2)
+
+  # Create nodes dynamically based on p
+
+  nodes = tibble(name = 1:p)
+
+  # Handle case with no edges
+  if (nrow(regular_edges) == 0) {
+    graph = tbl_graph(nodes = nodes, directed = FALSE)
+  } else {
+    graph = tbl_graph(nodes = nodes, edges = regular_edges, directed = FALSE)
+  }
+
+  # Plot
+  ggraph(graph, layout = 'circle') +
+    # Draw edges between different nodes (only if edges exist)
+    {if (nrow(regular_edges) > 0) geom_edge_link(color = "black", width = 1)} +
+    # Draw nodes
+    geom_node_point(size = 20, color = "white", fill = "lightblue", shape = 21, stroke = 2) +
+    # Add node labels
+    geom_node_text(aes(label = name), size = 6, fontface = "bold") +
+    # Manually add dashed circles for self-loops
+    {if (nrow(self_loops) > 0)
+      geom_node_point(data = . %>% filter(name %in% self_loops$node1),
+                      size = 20, color = "black", fill = NA, shape = 21, stroke = 2)} +
+    theme_void() +
+    coord_fixed() +
+    ggtitle(title)
+}
+
