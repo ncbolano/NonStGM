@@ -26,7 +26,7 @@ Kernel_Triangular = function(x) {
 #'
 #' @return Returns 1-(|x|^2) for values ( in absolute terms) less or equal 1, else 0.
 #' @noRd
-Kernel_Quadtratic=function(x)
+Kernel_Quadratic=function(x)
 {
   return(as.numeric(abs(x)<=1)*(1-abs(x)^2))
 }
