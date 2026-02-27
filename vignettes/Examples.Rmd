@@ -2,11 +2,27 @@
 title: "NonStGM Testing"
 author: "Your Name"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
+```{r}
+source('extractVariables.R')
+source('exampleVAR.R')
+source('KernelWeights.R')
+source('Combined_MK_Estimation.R')
+source('DFTransform.R')
+source('R_Hat_Creation.R')
+source('BetaFunctions.R')
+source('VarianceFunctions.R')
+source('run_script.R')
+```
 
 ```{r}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, quantmod, tidygraph, ggraph, eegkit)
+
 library(tidyverse)
 library(quantmod)
 library(tidygraph)
@@ -19,7 +35,7 @@ library(eegkit)
 tickers = c("AAPL", "MSFT", "GOOGL", "AMZN", "META", 
              "NVDA", "TSLA", "AMD", "INTC", "CRM")
 
-
+#tickers = c("AAPL", "MSFT", "GOOGL")
 start_date = "2022-01-01"
 end_date = "2024-01-01"
 
