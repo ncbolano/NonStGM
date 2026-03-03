@@ -1,9 +1,10 @@
-#' Transformation of frequencies (excluding a single index)
+#' Assigning r values to a specific index location
 #'
-#' @param J P-dimensional discrete fourier transform
-#' @param k scalar value for \omega(k) = (2pi *k*) / n
-#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param r P-dimensional discrete fourier transform
+#' @param c scalar value for \omega(k) = (2pi *k*) / n
 #' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
+#' @param p Dimension multivariate time series (# nodes)
 #' @return
 #' @noRd
 r_to_loc = function(r, c, a, nu, p) {
@@ -23,10 +24,8 @@ r_to_loc = function(r, c, a, nu, p) {
 
 #' Transformation of frequencies (excluding a single index)
 #'
-#' @param J P-dimensional discrete fourier transform
-#' @param k scalar value for \omega(k) = (2pi *k*) / n
-#' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
-#' @param a scalar index value which determines removal of specific index from local DFT matrix
+#' @param S_hat
+#' @param I_k Identity matrix of square dimension k
 #' @return
 #' @noRd
 #'
@@ -62,8 +61,9 @@ whittle_loss = function(S_hat, I_k) {
 
 #' Transformation of frequencies (excluding a single index)
 #'
-#' @param J P-dimensional discrete fourier transform
+#' @param JJ P-dimensional discrete fourier transform
 #' @param k scalar value for \omega(k) = (2pi *k*) / n
+#' @param M scalar value for smoothing distance (full smoothing dist. 2M)
 #' @param nu scalar value which specifies amount of local DFT's to create frequency matrix *J_k^n*
 #' @param a scalar index value which determines removal of specific index from local DFT matrix
 #' @return
