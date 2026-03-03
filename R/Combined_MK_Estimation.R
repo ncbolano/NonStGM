@@ -34,9 +34,9 @@ whittle_loss = function(S_hat, I_k) {
   S_hat = Re(S_hat)
 
   # Regularization for invertibility if needed
-  S_hat = S_hat + diag(1e-8, nrow(S_hat))
+  S_hat = S_hat + diag(1e-6, nrow(S_hat))
 
-  return( sum(diag(solve(S_hat) %*% I_k)) + log(det(S_hat)) )
+  return( Re(sum(diag(solve(S_hat) %*% I_k)) + log(det(S_hat))))
 }
 # smoothed_spectral_density_LOO = function(JJ, k, M, Kernel_func = Kernel_Triangular, leave_out = k) {
 #   n = nrow(JJ)
@@ -254,7 +254,7 @@ local_M_selection = function(JJ, k, M_grid) {
 
       S_hat_k = smoothed_spectral_density_LOO(JJ, k = k_candidate, M = M, leave_out = k_candidate)
 
-      CV_scores[j] = whittle_loss(S_hat_k, I_candidate_k)
+      CV_scores[j] = Re(whittle_loss(S_hat_k, I_candidate_k))
 
       #cat("M =", M, "K =", k_candidate , " CV =", CV_scores[j], "\n")
     }
