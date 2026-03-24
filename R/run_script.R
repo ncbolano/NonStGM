@@ -97,7 +97,7 @@ NonStGM = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = 0.05)
   return(significant_edges)
 }
 
-significant_edges = NonStGM(x,"Kernel_Quadtratic", 2 , 1 , alpha = .01)
+significant_edges = NonStGM(x,"Kernel_Quadratic", 2 , 1 , alpha = .01)
 
 # Separate self-loops from regular edges
 self_loops = significant_edges |> filter(node1 == node2)
