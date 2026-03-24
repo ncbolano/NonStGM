@@ -263,7 +263,6 @@ local_M_selection = function(JJ, k, M_grid) {
 
     best_local_M[i] = best_M_for_this_k
   }
-  print(best_local_M)
   return(best_local_M)
 }
 #' Transformation of frequencies (excluding a single index)
