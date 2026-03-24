@@ -16,9 +16,8 @@ source('VarianceFunctions.R')
 
 # examples
 x = sim.tvVAR(200,2048,.6)
-alpha = .01
-
-NonStGM = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = 0.05) {
+alpha = .05
+NonStGM = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = alpha) {
 
   Kernel_function = get(Kernel)
 
@@ -97,7 +96,7 @@ NonStGM = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = 0.05)
   return(significant_edges)
 }
 
-significant_edges = NonStGM(x,"Kernel_Quadratic", 2 , 1 , alpha = .01)
+significant_edges = NonStGM(x,"Kernel_Triangular", 2 , 1 , alpha = .05)
 
 # Separate self-loops from regular edges
 self_loops = significant_edges |> filter(node1 == node2)
@@ -208,35 +207,35 @@ ggraph(graph, layout = 'circle') +
 #
 # }
 
-plot_network = function(significant_edges, p, title = "Network Graph") {
-  # Separate self-loops from regular edges
-  self_loops = significant_edges |> dplyr::filter(node1 == node2)
-  regular_edges = significant_edges |> dplyr::filter(node1 != node2)
-
-  # Create nodes dynamically based on p
-  nodes = tibble(name = 1:p)
-
-  # Handle case with no edges
-  if (nrow(regular_edges) == 0) {
-    graph = tbl_graph(nodes = nodes, directed = FALSE)
-  } else {
-    graph = tbl_graph(nodes = nodes, edges = regular_edges, directed = FALSE)
-  }
-
-  # Plot
-  ggraph(graph, layout = 'circle') +
-    # Draw edges between different nodes (only if edges exist)
-    {if (nrow(regular_edges) > 0) geom_edge_link(color = "black", width = 1)} +
-    # Draw nodes
-    geom_node_point(size = 20, color = "white", fill = "lightblue", shape = 21, stroke = 2) +
-    # Add node labels
-    geom_node_text(aes(label = name), size = 6, fontface = "bold") +
-    # Manually add dashed circles for self-loops
-    {if (nrow(self_loops) > 0)
-      geom_node_point(data = . %>% dplyr::filter(name %in% self_loops$node1),
-                      size = 20, color = "black", fill = NA, shape = 21, stroke = 2)} +
-    theme_void() +
-    coord_fixed() +
-    ggtitle(title)
-}
+# plot_network = function(significant_edges, p, title = "Network Graph") {
+#   # Separate self-loops from regular edges
+#   self_loops = significant_edges |> dplyr::filter(node1 == node2)
+#   regular_edges = significant_edges |> dplyr::filter(node1 != node2)
+#
+#   # Create nodes dynamically based on p
+#   nodes = tibble(name = 1:p)
+#
+#   # Handle case with no edges
+#   if (nrow(regular_edges) == 0) {
+#     graph = tbl_graph(nodes = nodes, directed = FALSE)
+#   } else {
+#     graph = tbl_graph(nodes = nodes, edges = regular_edges, directed = FALSE)
+#   }
+#
+#   # Plot
+#   ggraph(graph, layout = 'circle') +
+#     # Draw edges between different nodes (only if edges exist)
+#     {if (nrow(regular_edges) > 0) geom_edge_link(color = "black", width = 1)} +
+#     # Draw nodes
+#     geom_node_point(size = 20, color = "white", fill = "lightblue", shape = 21, stroke = 2) +
+#     # Add node labels
+#     geom_node_text(aes(label = name), size = 6, fontface = "bold") +
+#     # Manually add dashed circles for self-loops
+#     {if (nrow(self_loops) > 0)
+#       geom_node_point(data = . %>% dplyr::filter(name %in% self_loops$node1),
+#                       size = 20, color = "black", fill = NA, shape = 21, stroke = 2)} +
+#     theme_void() +
+#     coord_fixed() +
+#     ggtitle(title)
+# }
 
