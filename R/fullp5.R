@@ -6,10 +6,10 @@ sim.tvVAR_p5 <- function(burnin, m, TV_size) {
 
   A <- matrix(c(
     0.5,  0,    0,    0,    0,
-    0.2,  0.6,  0,    0,    0,
+    0.3,  0.6,  0,    0,    0,
     0,    0.3,  0.5,  0,    0,
-    0,    0,    0.25, 0.55, 0,
-    0.15, 0,    0,    0.2,  0.5
+    0,    0,    0.3, 0.55, 0,
+    0.3, 0,    0,    0.3,  0.5
   ), ncol = 5, byrow = TRUE)
 
   n <- m + burnin
@@ -31,6 +31,24 @@ sim.tvVAR_p5 <- function(burnin, m, TV_size) {
   return(x2)
 }
 
+check_tvVAR_stability <- function(burnin, m, TV_size) {
+  A <- matrix(c(
+    0.5,  0,    0,    0,    0,
+    0.3,  0.6,  0,    0,    0,
+    0,    0.3,  0.5,  0,    0,
+    0,    0,    0.3, 0.55, 0,
+    0.3, 0,    0,    0.3,  0.5
+  ), ncol = 5, byrow = TRUE)
+  n <- burnin + m
+  st <- 0.3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1)
+  max_mod <- sapply(st, function(s) { A[1,1] <- s; max(Mod(eigen(A)$values)) })
+  cat("A[1,1] range:", round(range(st), 3), "| Max eigenvalue modulus:", round(max(max_mod), 4),
+      "| Stable:", max(max_mod) < 1, "\n")
+  return(max(max_mod) < 1)
+}
+
+# Usage
+check_tvVAR_stability(20, 4096, 0.6)
 # ============================================================
 # GRAPH RECOVERY FUNCTION FOR p=5
 # ============================================================
@@ -228,7 +246,7 @@ graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
 # SIMULATION RUNNER FOR p=5
 # ============================================================
 
-run_NonStGM_simulation_p5 <- function(R = 100, alpha = 0.05, burnin = 20, m = 4096,
+run_NonStGM_simulation_p5 <- function(R = 100, alpha = alpha, burnin = 20, m = 4096,
                                       TV_size = 0.6, nu = 2, L = 1,
                                       Kernel = 'Kernel_Triangular', seed = 0) {
 
@@ -266,8 +284,8 @@ run_NonStGM_simulation_p5 <- function(R = 100, alpha = 0.05, burnin = 20, m = 40
 # ============================================================
 
 results_p5 <- run_NonStGM_simulation_p5(
-  R = 20,
-  alpha = 0.5,
+  R = 100,
+  alpha = 0.05,
   burnin = 20,
   m = 4096,
   TV_size = 0.6,
