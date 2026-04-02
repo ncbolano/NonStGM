@@ -263,6 +263,7 @@ local_M_selection = function(JJ, k, M_grid) {
 
     best_local_M[i] = best_M_for_this_k
   }
+  print(best_local_M)
   return(best_local_M)
 }
 #' Transformation of frequencies (excluding a single index)
@@ -275,7 +276,7 @@ local_M_selection = function(JJ, k, M_grid) {
 #' @noRd
 extractM = function(JJ,k,coefnum) {
   n = nrow(JJ)
-  M_grid = unique(round(seq(max(coefnum , n^(1/5)), n^(1/2), length.out = 50)))
+  M_grid = unique(round(seq(max(coefnum , n^(1/5)), max(coefnum , n^(1/5)) + 1, length.out = 2)))
   M_list = local_M_selection(JJ, k, M_grid)
 
   return(M_list)
