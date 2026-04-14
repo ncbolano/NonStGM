@@ -1,5 +1,5 @@
 # ============================================================
-# p=5 VAR SIMULATION FUNCTION
+# p=7 VAR SIMULATION FUNCTION
 # ============================================================
 source('extractVariables.R')
 source('exampleVAR.R')
@@ -9,29 +9,33 @@ source('DFTransform.R')
 source('R_Hat_Creation.R')
 source('BetaFunctions.R')
 source('VarianceFunctions.R')
-source('NonStGM_adj.R')
-p =5
-sim.tvVAR_p5 <- function(burnin, m, TV_size) {
+#source('NonStGM_adj.R')
+p <- 7
 
+sim.tvVAR_p7 <- function(burnin, m, TV_size) {
+  # Circular structure: 1-2-3-4-5-6-7-1
+  # All diagonal = 0.5, all off-diagonal coefficients = 0.3
   A <- matrix(c(
-    0.5,  0,    0,    0,    0,
-    0.3,  0.6,  0,    0,    0,
-    0,    0.3,  0.5,  0,    0,
-    0,    0,    0.3, 0.55, 0,
-    0.3, 0,    0,    0.3,  0.5
-  ), ncol = 5, byrow = TRUE)
+    0.5,  0,    0,    0,    0,    0,    0,
+    0.3,  0.5,  0,    0,    0,    0,    0,
+    0,    0.3,  0.5,  0,    0,    0,    0,
+    0,    0,    0.3,  0.5,  0,    0,    0,
+    0,    0,    0,    0.3,  0.5,  0,    0,
+    0,    0,    0,    0,    0.3,  0.5,  0,
+    0.3,  0,    0,    0,    0,    0.3,  0.5
+  ), ncol = 7, byrow = TRUE)
 
   n <- m + burnin
-  p <- 5
+  p <- 7
   x <- matrix(rnorm(n * p), ncol = p)
   x1 <- x
 
-  # Time-varying coefficient for A[1,1] - same formula as p=3
+  # Time-varying coefficient for A[1][1] - same formula as p=3 and p=5
   st <- 0.3 + TV_size * (1 + exp(0.005 * (c(1:n) - (n / 2))))^(-1)
 
   for (tt in 2:n) {
     A.t <- A
-    A.t[1, 1] <- st[tt]  # Only node 1 is time-varying
+    A.t[1][1] <- st[tt]  # Only node 1 is time-varying
     temp <- A.t %*% matrix(x1[tt - 1, ], ncol = 1) + matrix(x[tt, ], ncol = 1)
     x1[tt, ] <- c(temp)
   }
@@ -40,33 +44,38 @@ sim.tvVAR_p5 <- function(burnin, m, TV_size) {
   return(x2)
 }
 
-check_tvVAR_stability <- function(burnin, m, TV_size) {
+check_tvVAR_stability_p7 <- function(burnin, m, TV_size) {
   A <- matrix(c(
-    0.5,  0,    0,    0,    0,
-    0.3,  0.6,  0,    0,    0,
-    0,    0.3,  0.5,  0,    0,
-    0,    0,    0.3, 0.55, 0,
-    0.3, 0,    0,    0.3,  0.5
-  ), ncol = 5, byrow = TRUE)
+    0.5,  0,    0,    0,    0,    0,    0,
+    0.3,  0.5,  0,    0,    0,    0,    0,
+    0,    0.3,  0.5,  0,    0,    0,    0,
+    0,    0,    0.3,  0.5,  0,    0,    0,
+    0,    0,    0,    0.3,  0.5,  0,    0,
+    0,    0,    0,    0,    0.3,  0.5,  0,
+    0.3,  0,    0,    0,    0,    0.3,  0.5
+  ), ncol = 7, byrow = TRUE)
+
   n <- burnin + m
   st <- 0.3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1)
-  max_mod <- sapply(st, function(s) { A[1,1] <- s; max(Mod(eigen(A)$values)) })
-  cat("A[1,1] range:", round(range(st), 3), "| Max eigenvalue modulus:", round(max(max_mod), 4),
+  max_mod <- sapply(st, function(s) { A[1][1] <- s; max(Mod(eigen(A)$values)) })
+
+  cat("A[1][1] range:", round(range(st), 3), "| Max eigenvalue modulus:", round(max(max_mod), 4),
       "| Stable:", max(max_mod) < 1, "\n")
   return(max(max_mod) < 1)
 }
 
 # Usage
-#check_tvVAR_stability(20, 4096, 0.6)
+# check_tvVAR_stability_p7(20, 4096, 0.6)
+
 # ============================================================
-# GRAPH RECOVERY FUNCTION FOR p=5
+# GRAPH RECOVERY FUNCTION FOR p=7
 # ============================================================
 # True edges:
 #   Time-varying: (1,1)
-#   Off-diagonal: (1,2), (2,3), (3,4), (4,5), (1,5)
-#   Total: 6 true edges, 5 off-diagonal
+#   Off-diagonal: (1,2), (2,3), (3,4), (4,5), (5,6), (6,7), (1,7)
+#   Total: 8 true edges, 7 off-diagonal
 
-graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
+graph_recovery_p7 <- function(Test_tibble, alpha = 0.05) {
   # Filter to lower triangular
   Test_tibble <- Test_tibble |>
     filter(a <= c)
@@ -90,7 +99,7 @@ graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
     ungroup()
 
   # Two-step BY adjustment
-  # Step 1: Within each (a, c, k, i) group (removed r from grouping since it's now fixed)
+  # Step 1: Within each (a, c, k, i) group
   Test_tibble_twostep <- Test_tibble |>
     group_by(a, c, k, i) |>
     group_modify(\(df, key) {
@@ -119,7 +128,7 @@ graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
       by = c("a", "c", "r", "k", "i")
     )
 
-  # Graph recovery metrics (simplified - no need to specify r conditions)
+  # Graph recovery metrics
   graph_recovery_results <- Test_tibble_final |>
     group_by(i) |>
     summarise(
@@ -133,8 +142,12 @@ graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
         any(a == 4 & c == 3 & global_BY_min < alpha),
       global_detect_45 = any(a == 4 & c == 5 & global_BY_min < alpha) |
         any(a == 5 & c == 4 & global_BY_min < alpha),
-      global_detect_15 = any(a == 1 & c == 5 & global_BY_min < alpha) |
-        any(a == 5 & c == 1 & global_BY_min < alpha),
+      global_detect_56 = any(a == 5 & c == 6 & global_BY_min < alpha) |
+        any(a == 6 & c == 5 & global_BY_min < alpha),
+      global_detect_67 = any(a == 6 & c == 7 & global_BY_min < alpha) |
+        any(a == 7 & c == 6 & global_BY_min < alpha),
+      global_detect_17 = any(a == 1 & c == 7 & global_BY_min < alpha) |
+        any(a == 7 & c == 1 & global_BY_min < alpha),
       # Count number of significant off-diagonal edges
       global_n_edges = nrow(distinct(data.frame(
         a2 = pmin(a[a != c & global_BY_min < alpha],
@@ -152,8 +165,12 @@ graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
         any(a == 4 & c == 3 & twostep_BY < alpha),
       twostep_detect_45 = any(a == 4 & c == 5 & twostep_BY < alpha) |
         any(a == 5 & c == 4 & twostep_BY < alpha),
-      twostep_detect_15 = any(a == 1 & c == 5 & twostep_BY < alpha) |
-        any(a == 5 & c == 1 & twostep_BY < alpha),
+      twostep_detect_56 = any(a == 5 & c == 6 & twostep_BY < alpha) |
+        any(a == 6 & c == 5 & twostep_BY < alpha),
+      twostep_detect_67 = any(a == 6 & c == 7 & twostep_BY < alpha) |
+        any(a == 7 & c == 6 & twostep_BY < alpha),
+      twostep_detect_17 = any(a == 1 & c == 7 & twostep_BY < alpha) |
+        any(a == 7 & c == 1 & twostep_BY < alpha),
       # Count number of significant off-diagonal edges for two-step
       twostep_n_edges = nrow(distinct(data.frame(
         a2 = pmin(a[a != c & twostep_BY < alpha],
@@ -167,21 +184,25 @@ graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
   # Accuracy summary
   accuracy_summary <- graph_recovery_results |>
     mutate(
-      # Global BY: Perfect recovery (all 6 true edges, exactly 5 off-diagonal) (diag omitted)
-      global_all_true_detected = global_detect_12 &
+      # Global BY: Perfect recovery (all 8 true edges, exactly 7 off-diagonal) ( removed global_detect_11_tv )
+      global_all_true_detected =  global_detect_12 &
         global_detect_23 & global_detect_34 &
-        global_detect_45 & global_detect_15,
-      global_perfect = global_all_true_detected & (global_n_edges == 5),
+        global_detect_45 & global_detect_56 &
+        global_detect_67 & global_detect_17,
+      global_perfect = global_all_true_detected & (global_n_edges == 7),
       # Two-Step BY: Perfect recovery
       twostep_all_true_detected = twostep_detect_11_tv & twostep_detect_12 &
         twostep_detect_23 & twostep_detect_34 &
-        twostep_detect_45 & twostep_detect_15,
-      twostep_perfect = twostep_all_true_detected & (twostep_n_edges == 5),
-      # Sensitivity: proportion of 6 true edges detected
+        twostep_detect_45 & twostep_detect_56 &
+        twostep_detect_67 & twostep_detect_17,
+      twostep_perfect = twostep_all_true_detected & (twostep_n_edges == 7),
+      # Sensitivity: proportion of 8 true edges detected
       global_sensitivity = (global_detect_11_tv + global_detect_12 + global_detect_23 +
-                              global_detect_34 + global_detect_45 + global_detect_15) / 6,
+                              global_detect_34 + global_detect_45 + global_detect_56 +
+                              global_detect_67 + global_detect_17) / 8,
       twostep_sensitivity = (twostep_detect_11_tv + twostep_detect_12 + twostep_detect_23 +
-                               twostep_detect_34 + twostep_detect_45 + twostep_detect_15) / 6
+                               twostep_detect_34 + twostep_detect_45 + twostep_detect_56 +
+                               twostep_detect_67 + twostep_detect_17) / 8
     )
 
   # Overall accuracy metrics
@@ -215,9 +236,17 @@ graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
       mean(accuracy_summary$global_detect_45),
       mean(accuracy_summary$twostep_detect_45)
     ),
-    Detect_15 = c(
-      mean(accuracy_summary$global_detect_15),
-      mean(accuracy_summary$twostep_detect_15)
+    Detect_56 = c(
+      mean(accuracy_summary$global_detect_56),
+      mean(accuracy_summary$twostep_detect_56)
+    ),
+    Detect_67 = c(
+      mean(accuracy_summary$global_detect_67),
+      mean(accuracy_summary$twostep_detect_67)
+    ),
+    Detect_17 = c(
+      mean(accuracy_summary$global_detect_17),
+      mean(accuracy_summary$twostep_detect_17)
     ),
     Mean_Sensitivity = c(
       mean(accuracy_summary$global_sensitivity),
@@ -228,8 +257,8 @@ graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
       mean(accuracy_summary$twostep_n_edges)
     ),
     Mean_False_Positives = c(
-      mean(pmax(0, accuracy_summary$global_n_edges - 5)),
-      mean(pmax(0, accuracy_summary$twostep_n_edges - 5))
+      mean(pmax(0, accuracy_summary$global_n_edges - 7)),
+      mean(pmax(0, accuracy_summary$twostep_n_edges - 7))
     )
   )
 
@@ -237,22 +266,18 @@ graph_recovery_p5 <- function(Test_tibble, alpha = 0.05) {
 }
 
 # ============================================================
-# SIMULATION RUNNER FOR p=5
+# SIMULATION RUNNER FOR p=7
 # ============================================================
-
-run_NonStGM_simulation_p5 <- function(R = 100, alpha = alpha, burnin = 20, m = 4096,
+run_NonStGM_simulation_p7 <- function(R = 100, alpha = 0.05, burnin = 20, m = 4096,
                                       TV_size = 0.6, nu = 2, L = 1,
                                       Kernel = 'Kernel_Triangular', seed = 0) {
-
   # Collect all Test_tibbles across replications
   All_Test_tibble <- NULL
-
   set.seed(seed)
 
   for (iter in 1:R) {
-
-    # Generate p=5 data
-    x <- sim.tvVAR_p5(burnin, m, TV_size)
+    # Generate p=7 data
+    x <- sim.tvVAR_p7(burnin, m, TV_size)
 
     # Get Test_tibble from NonStGM_adj
     tib <- NonStGM_adj(x, Kernel = Kernel, nu = nu, L = L, alpha = alpha)
@@ -264,18 +289,16 @@ run_NonStGM_simulation_p5 <- function(R = 100, alpha = alpha, burnin = 20, m = 4
     # Combine with all replications
     All_Test_tibble <- rbind(All_Test_tibble, tib)
   }
+  # Apply graph_recovery_p7 to combined tibble
+  results <- graph_recovery_p7(All_Test_tibble, alpha = alpha)
 
-  # Apply graph_recovery_p5 to combined tibble
-  results <- graph_recovery_p5(All_Test_tibble, alpha = alpha)
-
-  return(results)
+  return(list(results,All_Test_tibble))
 }
 
 # ============================================================
 # RUN THE SIMULATION
 # ============================================================
-
-results_p5 <- run_NonStGM_simulation_p5(
+results_p7 <- run_NonStGM_simulation_p7(
   R = 100,
   alpha = 0.05,
   burnin = 20,
@@ -287,4 +310,5 @@ results_p5 <- run_NonStGM_simulation_p5(
   seed = 0
 )
 
-print(results_p5)
+print(results_p7[[1]])
+hi = results_p7[[2]]

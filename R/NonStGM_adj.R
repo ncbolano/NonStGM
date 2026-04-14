@@ -257,6 +257,6 @@ run_NonStGM_simulation <- function(R = 100, alpha = 0.05, burnin = 20, m = 4096,
 }
 
 # Run it
-results <- run_NonStGM_simulation(R = 100, alpha = 0.05, burnin = 20, m = 4096,
+#results <- run_NonStGM_simulation(R = 100, alpha = 0.05, burnin = 20, m = 4096,
                                   TV_size = 0.6, seed = 0)
-print(results)
+#print(results)
