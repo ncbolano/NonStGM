@@ -65,6 +65,10 @@ NonStGM_adj = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = a
   }
   Test_tibble = Test_tibble |>
     filter(a <= c)
+
+  Test_tibble <- Test_tibble |>
+    filter((a != c & r == 0) | (a == c & r == 1))
+
   return(Test_tibble)
 }
 
@@ -223,40 +227,40 @@ NonStGM_adj = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = a
 # WRAPPED FUNCTION FOR R REPLICATIONS
 # ============================================================
 
-run_NonStGM_simulation <- function(R = 100, alpha = 0.05, burnin = 20, m = 4096,
-                                   TV_size = 0.6, nu = 2, L = 1,
-                                   Kernel = 'Kernel_Triangular', seed = 0) {
-
-  # Collect all Test_tibbles across replications
-  All_Test_tibble <- NULL
-
-  set.seed(seed)
-
-  for (iter in 1:R) {
-
-    # Generate data
-    x <- sim.tvVAR(burnin, m, TV_size)
-
-    # Get Test_tibble from NonStGM_adj
-    tib <- NonStGM_adj(x, Kernel = Kernel, nu = nu, L = L, alpha = alpha)
-
-    # Update iteration index to reflect replication number
-    tib <- tib |>
-      mutate(i = iter)
-
-    # Combine with all replications
-    All_Test_tibble <- rbind(All_Test_tibble, tib)
-
-    if (iter %% 20 == 0) cat("Completed iteration:", iter, "/", R, "\n")
-  }
-
-  # Apply graph_recovery to combined tibble
-  results <- graph_recovery(All_Test_tibble, alpha = alpha)
-
-  return(results)
-}
+# run_NonStGM_simulation <- function(R = 100, alpha = 0.05, burnin = 20, m = 4096,
+#                                    TV_size = 0.6, nu = 2, L = 1,
+#                                    Kernel = 'Kernel_Triangular', seed = 0) {
+#
+#   # Collect all Test_tibbles across replications
+#   All_Test_tibble <- NULL
+#
+#   set.seed(seed)
+#
+#   for (iter in 1:R) {
+#
+#     # Generate data
+#     x <- sim.tvVAR(burnin, m, TV_size)
+#
+#     # Get Test_tibble from NonStGM_adj
+#     tib <- NonStGM_adj(x, Kernel = Kernel, nu = nu, L = L, alpha = alpha)
+#
+#     # Update iteration index to reflect replication number
+#     tib <- tib |>
+#       mutate(i = iter)
+#
+#     # Combine with all replications
+#     All_Test_tibble <- rbind(All_Test_tibble, tib)
+#
+#     if (iter %% 20 == 0) cat("Completed iteration:", iter, "/", R, "\n")
+#   }
+#
+#   # Apply graph_recovery to combined tibble
+#   results <- graph_recovery(All_Test_tibble, alpha = alpha)
+#
+#   return(results)
+# }
 
 # Run it
 #results <- run_NonStGM_simulation(R = 100, alpha = 0.05, burnin = 20, m = 4096,
-                                  TV_size = 0.6, seed = 0)
+                                  #TV_size = 0.6, seed = 0)
 #print(results)
