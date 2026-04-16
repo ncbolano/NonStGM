@@ -67,7 +67,7 @@ NonStGM_adj = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = a
     filter(a <= c)
 
   Test_tibble <- Test_tibble |>
-    filter((a != c & r == 0) | (a == c & r == 1))
+    filter((a != c & r == 0) | (a == c & r != 0)) # CHANGED
 
   return(Test_tibble)
 }

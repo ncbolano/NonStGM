@@ -27,6 +27,7 @@ run_NonStGM_simulation_p3_parallel = function(R = 100, alpha = 0.05, burnin = 20
     source('BetaFunctions.R')
     source('VarianceFunctions.R')
     source('NonStGM_adj.R')
+    source('parallel_sim_dependencies.R')
     library(dplyr)
     library(tibble)
   })
@@ -60,7 +61,7 @@ results_p3 = run_NonStGM_simulation_p3_parallel(
   L = 1,
   Kernel = 'Kernel_Triangular',
   seed = 1,
-  n_cores = 4
+  n_cores = 16
 )
 
 print(results_p3[[1]])
@@ -91,6 +92,7 @@ run_NonStGM_simulation_p5_parallel = function(R = 100, alpha = 0.05, burnin = 20
     source('BetaFunctions.R')
     source('VarianceFunctions.R')
     source('NonStGM_adj.R')
+    source('parallel_sim_dependencies.R')
     library(dplyr)
     library(tibble)
   })
@@ -138,6 +140,7 @@ run_NonStGM_simulation_p7_parallel = function(R = 100, alpha = 0.05, burnin = 20
     source('BetaFunctions.R')
     source('VarianceFunctions.R')
     source('NonStGM_adj.R')
+    source('parallel_sim_dependencies.R')
     library(dplyr)
     library(tibble)
   })
@@ -171,20 +174,21 @@ results_p5 = run_NonStGM_simulation_p5_parallel(
   L = 1,
   Kernel = 'Kernel_Triangular',
   seed = 1,
-  n_cores = 8
+  n_cores = 18
 )
 print(results_p5)
 
 results_p7 = run_NonStGM_simulation_p7_parallel(
   R = 1000,
   alpha = 0.05,
-  burnin = 20,
+  burnin = 200,
   m = 2^12,
-  TV_size = 0.6,
+  TV_size = .9,
   nu = 2,
   L = 1,
   Kernel = 'Kernel_Triangular',
-  seed = 0,
-  n_cores = 8
+  seed = 1,
+  n_cores = 20
 )
 print(results_p7[[1]])
+
