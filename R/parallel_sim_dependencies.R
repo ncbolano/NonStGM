@@ -1,16 +1,3 @@
-# ============================================================
-# p=5 VAR SIMULATION FUNCTION
-# ============================================================
-source('extractVariables.R')
-source('exampleVAR.R')
-source('KernelWeights.R')
-source('Combined_MK_Estimation.R')
-source('DFTransform.R')
-source('R_Hat_Creation.R')
-source('BetaFunctions.R')
-source('VarianceFunctions.R')
-source('NonStGM_adj.R')
-
 
 # ============================================================
 # p=3 VAR SIMULATION FUNCTION
@@ -83,7 +70,7 @@ graph_recovery_p3 = function(Test_tibble, alpha = 0.05) {
 
   Test_tibble = Test_tibble |>
     filter(a <= c) |>
-    filter((a != c & r == 0) | (a == c & r == 1))
+    filter((a != c & r == 0) | (a == c & r != 0))
 
   Graph_tibble = Test_tibble |>
     group_by(a, c, i) |>
@@ -140,10 +127,6 @@ graph_recovery_p3 = function(Test_tibble, alpha = 0.05) {
 }
 
 
-
-
-
-
 p = 5
 
 sim.tvVAR_p5 = function(burnin, m, TV_size) {
@@ -188,7 +171,7 @@ check_tvVAR_stability = function(burnin, m, TV_size) {
 graph_recovery_p5 = function(Test_tibble, alpha = 0.05) {
   Test_tibble = Test_tibble |>
     filter(a <= c) |>
-    filter((a != c & r == 0) | (a == c & r == 1))
+    filter((a != c & r == 0) | (a == c & r != 0))
 
   Graph_tibble = Test_tibble |>
     group_by(a, c, i) |>
@@ -256,18 +239,18 @@ run_NonStGM_simulation_p5 = function(R = 100, alpha = 0.05, burnin = 20, m = 409
   return(results)
 }
 
-results_p5 = run_NonStGM_simulation_p5(
-  R = 100,
-  alpha = 0.05,
-  burnin = 200,
-  m = 2^12,
-  TV_size = 0.6,
-  nu = 2,
-  L = 1,
-  Kernel = 'Kernel_Triangular',
-  seed = 1
-)
-print(results_p5)
+# results_p5 = run_NonStGM_simulation_p5(
+#   R = 100,
+#   alpha = 0.05,
+#   burnin = 200,
+#   m = 2^12,
+#   TV_size = 0.6,
+#   nu = 2,
+#   L = 1,
+#   Kernel = 'Kernel_Triangular',
+#   seed = 1
+# )
+# print(results_p5)
 
 # ============================================================
 # p=7 VAR SIMULATION FUNCTION
@@ -288,7 +271,7 @@ sim.tvVAR_p7 = function(burnin, m, TV_size) {
   p = 7
   x = matrix(rnorm(n * p), ncol = p)
   x1 = x
-  st = 0.3 + TV_size * (1 + exp(0.005 * (c(1:n) - (n / 2))))^(-1)
+  st = .3 + TV_size * (1 + exp(0.005 * (c(1:n) - (n / 2))))^(-1) # CHANGED
   for (tt in 2:n) {
     A.t = A
     A.t[1, 1] = st[tt]
@@ -310,17 +293,18 @@ check_tvVAR_stability_p7 = function(burnin, m, TV_size) {
     0.3,  0,    0,    0,    0,    0.3,  0.5
   ), ncol = 7, byrow = TRUE)
   n = burnin + m
-  st = 0.3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1)
+  st = .3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1) #CHANGED
   max_mod = sapply(st, function(s) { A[1, 1] = s; max(Mod(eigen(A)$values)) })
   cat("A[1,1] range:", round(range(st), 3), "| Max eigenvalue modulus:", round(max(max_mod), 4),
       "| Stable:", max(max_mod) < 1, "\n")
   return(max(max_mod) < 1)
 }
 
+
 graph_recovery_p7 = function(Test_tibble, alpha = 0.05) {
   Test_tibble = Test_tibble |>
     filter(a <= c) |>
-    filter((a != c & r == 0) | (a == c & r == 1))
+    filter((a != c & r == 0) | (a == c & r != 0))
 
   Graph_tibble = Test_tibble |>
     group_by(a, c, i) |>
@@ -392,16 +376,16 @@ run_NonStGM_simulation_p7 = function(R = 100, alpha = 0.05, burnin = 20, m = 409
   return(list(results, All_Test_tibble))
 }
 
-results_p7 = run_NonStGM_simulation_p7(
-  R = 100,
-  alpha = 0.05,
-  burnin = 20,
-  m = 2^12,
-  TV_size = 0.6,
-  nu = 2,
-  L = 1,
-  Kernel = 'Kernel_Triangular',
-  seed = 0
-)
-print(results_p7[[1]])
-hi = results_p7[[2]]
+# results_p7 = run_NonStGM_simulation_p7(
+#   R = 100,
+#   alpha = 0.05,
+#   burnin = 20,
+#   m = 2^12,
+#   TV_size = 0.6,
+#   nu = 2,
+#   L = 1,
+#   Kernel = 'Kernel_Triangular',
+#   seed = 0
+# )
+# print(results_p7[[1]])
+# hi = results_p7[[2]]
