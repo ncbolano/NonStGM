@@ -226,7 +226,7 @@ extractK = function(JJ,coefnum) {
     condition_number_smooth[k] = max(eigenvals_smooth) / (min(eigenvals_smooth) + 1e-10)
   }
 
-  composite_smooth = trace_smooth / condition_number_smooth # From frequency 1:(n/2)
+  composite_smooth = trace_smooth / ((condition_number_smooth)^(.5)) # From frequency 1:(n/2)
   chosen_frequencies = return_max(composite_smooth , M_initial)
   k = chosen_frequencies
   return(k)
@@ -276,7 +276,7 @@ local_M_selection = function(JJ, k, M_grid) {
 #' @noRd
 extractM = function(JJ,k,coefnum) {
   n = nrow(JJ)
-  M_grid = unique(round(seq(max(coefnum , n^(1/5)), max(coefnum , n^(1/5)) + 1, length.out = 2)))
+  M_grid = unique(round(seq(max(coefnum , n^(1/5)), max(coefnum , n^(1/5)) + 1, length.out = 10)))
   M_list = local_M_selection(JJ, k, M_grid)
 
   return(M_list)
