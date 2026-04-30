@@ -250,8 +250,8 @@ run_NonStGM_simulation2_p7_parallel = function(R = 100, alpha = 0.05, burnin = 2
 }
 
 results2_p7 = run_NonStGM_simulation2_p7_parallel(
-  R = 100,
-  alpha = 0.01,
+  R = 1000,
+  alpha = 0.05,
   burnin = 200,
   m = 2^12,
   TV_size = .6,
