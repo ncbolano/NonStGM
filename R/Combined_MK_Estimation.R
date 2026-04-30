@@ -206,6 +206,8 @@ return_max = function(x, M) {
 #' @noRd
 extractK = function(JJ,coefnum) {
   M_initial = 2 * coefnum
+  floor = M_initial + 1
+  ceiling = n_freq - M_initial
   n_freq = floor(nrow(JJ) / 2)
 
   trace_smooth = numeric(n_freq)
@@ -213,7 +215,7 @@ extractK = function(JJ,coefnum) {
   largest_eig_smooth = numeric(n_freq)
   condition_number_smooth = numeric(n_freq)
 
-  for (k in 1:n_freq) {
+  for (k in floor:ceiling()) {
 
     # Smoothed Periodogram (weighted by kernel)
     S_k = Re(smoothed_spectral_density(JJ, k, M_initial, Kernel_Triangular))
