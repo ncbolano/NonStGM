@@ -187,23 +187,24 @@ graph_recovery_p5 = function(Test_tibble, alpha = 0.05) {
     summarise(
       detect_11_tv = any(a == 1 & c == 1 & p_min < alpha),
       detect_12 = any(a == 1 & c == 2 & p_min < alpha),
+      detect_14 = any(a == 1 & c == 4 & p_min < alpha),
+      detect_15 = any(a == 1 & c == 5 & p_min < alpha),
       detect_23 = any(a == 2 & c == 3 & p_min < alpha),
       detect_34 = any(a == 3 & c == 4 & p_min < alpha),
       detect_45 = any(a == 4 & c == 5 & p_min < alpha),
-      detect_15 = any(a == 1 & c == 5 & p_min < alpha),
       n_offdiag_edges = sum(a != c & p_min < alpha),
       .groups = "drop"
     )
 
   accuracy_summary = graph_recovery_results |>
     mutate(
-      all_offdiag_detected = detect_12 & detect_23 & detect_34 &
-        detect_45 & detect_15,
+      all_offdiag_detected = detect_12 & detect_14 & detect_15 &
+        detect_23 & detect_34 & detect_45,
       all_true_detected = all_offdiag_detected & detect_11_tv,
-      perfect = all_true_detected & (n_offdiag_edges == 5),
-      sensitivity = (detect_11_tv + detect_12 + detect_23 +
-                       detect_34 + detect_45 + detect_15) / 6,
-      false_positives = pmax(0, n_offdiag_edges - 5)
+      perfect = all_true_detected & (n_offdiag_edges == 6),
+      sensitivity = (detect_11_tv + detect_12 + detect_14 +
+                       detect_15 + detect_23 + detect_34 + detect_45) / 7,
+      false_positives = pmax(0, n_offdiag_edges - 6)
     )
 
   overall_accuracy = tibble(
@@ -212,17 +213,17 @@ graph_recovery_p5 = function(Test_tibble, alpha = 0.05) {
     All_True_Detected = mean(accuracy_summary$all_true_detected),
     Detect_11_TV = mean(accuracy_summary$detect_11_tv),
     Detect_12 = mean(accuracy_summary$detect_12),
+    Detect_14 = mean(accuracy_summary$detect_14),
+    Detect_15 = mean(accuracy_summary$detect_15),
     Detect_23 = mean(accuracy_summary$detect_23),
     Detect_34 = mean(accuracy_summary$detect_34),
     Detect_45 = mean(accuracy_summary$detect_45),
-    Detect_15 = mean(accuracy_summary$detect_15),
     Mean_Sensitivity = mean(accuracy_summary$sensitivity),
     Mean_N_Edges = mean(accuracy_summary$n_offdiag_edges),
     Mean_False_Positives = mean(accuracy_summary$false_positives)
   )
   return(overall_accuracy)
 }
-
 # ============================================================
 # SIMULATION RUNNER FOR p=5
 # ============================================================
