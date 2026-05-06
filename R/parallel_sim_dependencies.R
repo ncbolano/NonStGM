@@ -577,6 +577,8 @@ graph_recovery_p15 = function(Test_tibble, alpha = 0.05) {
       detect_1_1_tv  = any(a == 1  & c == 1  & p_min < alpha),
       detect_12_12_tv = any(a == 12 & c == 12 & p_min < alpha),
       detect_1_2   = any(a == 1  & c == 2  & p_min < alpha),
+      detect_1_13   = any(a == 1  & c == 13  & p_min < alpha),
+      detect_1_14   = any(a == 1  & c == 14  & p_min < alpha),
       detect_2_3   = any(a == 2  & c == 3  & p_min < alpha),
       detect_3_4   = any(a == 3  & c == 4  & p_min < alpha),
       detect_4_5   = any(a == 4  & c == 5  & p_min < alpha),
@@ -596,18 +598,18 @@ graph_recovery_p15 = function(Test_tibble, alpha = 0.05) {
 
   accuracy_summary = graph_recovery_results |>
     mutate(
-      all_offdiag_detected = detect_1_2 & detect_2_3 & detect_3_4 &
+      all_offdiag_detected = detect_1_2 & detect_1_13 & detect_1_14 & detect_2_3 & detect_3_4 &
         detect_4_5 & detect_5_6 & detect_6_7 & detect_7_8 &
         detect_8_9 & detect_9_10 & detect_10_11 & detect_11_12 &
         detect_12_13 & detect_13_14 & detect_14_15,
       all_true_detected = all_offdiag_detected & detect_1_1_tv & detect_12_12_tv,
       perfect = all_true_detected & (n_offdiag_edges == 14),
       sensitivity = (detect_1_1_tv + detect_12_12_tv +
-                       detect_1_2 + detect_2_3 + detect_3_4 + detect_4_5 +
+                       detect_1_2 + detect_1_14 + detect_1_13 + detect_2_3 + detect_3_4 + detect_4_5 +
                        detect_5_6 + detect_6_7 + detect_7_8 + detect_8_9 +
                        detect_9_10 + detect_10_11 + detect_11_12 +
-                       detect_12_13 + detect_13_14 + detect_14_15) / 16,
-      false_positives = pmax(0, n_offdiag_edges - 14)
+                       detect_12_13 + detect_13_14 + detect_14_15) / 18,
+      false_positives = pmax(0, n_offdiag_edges - 16)
     )
 
   overall_accuracy = tibble(
@@ -674,7 +676,7 @@ run_NonStGM_simulation_p15_parallel = function(R = 100, alpha = 0.05, burnin = 2
 }
 
 results_p15 = run_NonStGM_simulation_p15_parallel(
-  R = 1000,
+  R = 100,
   alpha = 0.05,
   burnin = 200,
   m = 2^12,
