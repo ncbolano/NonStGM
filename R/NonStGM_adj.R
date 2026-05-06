@@ -10,7 +10,7 @@ NonStGM_adj = function(x, Kernel = 'Kernel_Triangular', nu = 2, L = 1, alpha = a
   # Gathering frequencies (k) + local smoothing values (m_i) for each frequency
   k = extractK(J, coefnum)
   n = nrow(x)
-  M_grid = unique(round(seq(max(coefnum , n^(1/5)), max(coefnum , n^(1/2))  , length.out = 50)))
+  M_grid = unique(round(seq(max(coefnum , n^(1/5)), max(coefnum , n^(1/2))  , length.out = 10)))
   M_list = local_M_selection(J, k, M_grid)
 
   n_k = length(k)
