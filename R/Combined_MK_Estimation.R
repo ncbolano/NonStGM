@@ -268,6 +268,7 @@ local_M_selection = function(JJ, k, M_grid) {
   print(best_local_M)
   return(best_local_M)
 }
+
 #' Transformation of frequencies (excluding a single index)
 #'
 #' @param J P-dimensional discrete fourier transform

@@ -129,7 +129,7 @@ graph_recovery_p3 = function(Test_tibble, alpha = 0.05) {
 }
 
 
-p = 5
+#p = 5
 
 sim.tvVAR_p5 = function(burnin, m, TV_size) {
   A = matrix(c(
@@ -513,178 +513,183 @@ graph_recovery2_p7 = function(Test_tibble, alpha = 0.05) {
 
 
 # p = 15
-sim.tvVAR_p15 = function(burnin, m, TV_size) {
-  A = matrix(0, ncol = 15, nrow = 15)
-  diag(A) = 0.4
-  for (i in 1:14) {
-    A[i + 1, i] = 0.3
-  }
-  A[14,1] = 0.3
-  n = m + burnin
-  p = 15
-  x = matrix(rnorm(n * p), ncol = p)
-  x1 = x
-  st1  = .3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1)
-  st12 = .3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1)
-  for (tt in 2:n) {
-    A.t = A
-    A.t[1, 1]   = st1[tt]
-    A.t[12, 12] = st12[tt]
-    temp = A.t %*% matrix(x1[tt - 1, ], ncol = 1) + matrix(x[tt, ], ncol = 1)
-    x1[tt, ] = c(temp)
-  }
-  x2 = x1[-c(1:burnin), ]
-  return(x2)
-}
+# sim.tvVAR_p15 = function(burnin, m, TV_size) {
+#   A = matrix(0, ncol = 15, nrow = 15)
+#   diag(A) = 0.4
+#   for (i in 1:14) {
+#     A[i + 1, i] = 0.3
+#   }
+#   A[14,1] = 0.3
+#   n = m + burnin
+#   p = 15
+#   x = matrix(rnorm(n * p), ncol = p)
+#   x1 = x
+#   st1  = .3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1)
+#   st12 = .3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1)
+#   for (tt in 2:n) {
+#     A.t = A
+#     A.t[1, 1]   = st1[tt]
+#     A.t[12, 12] = st12[tt]
+#     temp = A.t %*% matrix(x1[tt - 1, ], ncol = 1) + matrix(x[tt, ], ncol = 1)
+#     x1[tt, ] = c(temp)
+#   }
+#   x2 = x1[-c(1:burnin), ]
+#   return(x2)
+# }
+#
+# check_tvVAR_stability_p15 = function(burnin, m, TV_size) {
+#   A = matrix(0, ncol = 15, nrow = 15)
+#   diag(A) = 0.4
+#   for (i in 1:14) {
+#     A[i + 1, i] = 0.3
+#   }
+#   n = burnin + m
+#   st = .3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1)
+#   max_mod = sapply(st, function(s) {
+#     A[1, 1]   = s
+#     A[12, 12] = s
+#     max(Mod(eigen(A)$values))
+#   })
+#   cat("A[1,1]/A[12,12] range:", round(range(st), 3),
+#       "| Max eigenvalue modulus:", round(max(max_mod), 4),
+#       "| Stable:", max(max_mod) < 1, "\n")
+#   return(max(max_mod) < 1)
+# }
+#
+# graph_recovery_p15 = function(Test_tibble, alpha = 0.05) {
+#   # True graph: chain 1-2-3-...-15 (14 off-diagonal edges)
+#   # TV on diagonal: nodes 1 and 12
+#   # A'A only has nonzero off-diagonal at (j, j+1) since columns only overlap at one row
+#   Test_tibble = Test_tibble |>
+#     filter(a <= c) |>
+#     filter((a != c & r == 0) | (a == c & r == 1))
+#
+#   Graph_tibble = Test_tibble |>
+#     group_by(a, c, i) |>
+#     summarise(
+#       p_min = min(p.adjust(c(Re, Im), method = "BY")),
+#       .groups = "drop"
+#     )
+#
+#   graph_recovery_results = Graph_tibble |>
+#     group_by(i) |>
+#     summarise(
+#       detect_1_1_tv  = any(a == 1  & c == 1  & p_min < alpha),
+#       detect_12_12_tv = any(a == 12 & c == 12 & p_min < alpha),
+#       detect_1_2   = any(a == 1  & c == 2  & p_min < alpha),
+#       detect_1_13   = any(a == 1  & c == 13  & p_min < alpha),
+#       detect_1_14   = any(a == 1  & c == 14  & p_min < alpha),
+#       detect_2_3   = any(a == 2  & c == 3  & p_min < alpha),
+#       detect_3_4   = any(a == 3  & c == 4  & p_min < alpha),
+#       detect_4_5   = any(a == 4  & c == 5  & p_min < alpha),
+#       detect_5_6   = any(a == 5  & c == 6  & p_min < alpha),
+#       detect_6_7   = any(a == 6  & c == 7  & p_min < alpha),
+#       detect_7_8   = any(a == 7  & c == 8  & p_min < alpha),
+#       detect_8_9   = any(a == 8  & c == 9  & p_min < alpha),
+#       detect_9_10  = any(a == 9  & c == 10 & p_min < alpha),
+#       detect_10_11 = any(a == 10 & c == 11 & p_min < alpha),
+#       detect_11_12 = any(a == 11 & c == 12 & p_min < alpha),
+#       detect_12_13 = any(a == 12 & c == 13 & p_min < alpha),
+#       detect_13_14 = any(a == 13 & c == 14 & p_min < alpha),
+#       detect_14_15 = any(a == 14 & c == 15 & p_min < alpha),
+#       n_offdiag_edges = sum(a != c & p_min < alpha),
+#       .groups = "drop"
+#     )
+#
+#   accuracy_summary = graph_recovery_results |>
+#     mutate(
+#       all_offdiag_detected = detect_1_2 & detect_1_13 & detect_1_14 & detect_2_3 & detect_3_4 &
+#         detect_4_5 & detect_5_6 & detect_6_7 & detect_7_8 &
+#         detect_8_9 & detect_9_10 & detect_10_11 & detect_11_12 &
+#         detect_12_13 & detect_13_14 & detect_14_15,
+#       all_true_detected = all_offdiag_detected & detect_1_1_tv & detect_12_12_tv,
+#       perfect = all_true_detected & (n_offdiag_edges == 14),
+#       sensitivity = (detect_1_1_tv + detect_12_12_tv +
+#                        detect_1_2 + detect_1_14 + detect_1_13 + detect_2_3 + detect_3_4 + detect_4_5 +
+#                        detect_5_6 + detect_6_7 + detect_7_8 + detect_8_9 +
+#                        detect_9_10 + detect_10_11 + detect_11_12 +
+#                        detect_12_13 + detect_13_14 + detect_14_15) / 18,
+#       false_positives = pmax(0, n_offdiag_edges - 16)
+#     )
+#
+#   overall_accuracy = tibble(
+#     Method               = "Global BY",
+#     Perfect_Recovery     = mean(accuracy_summary$perfect),
+#     All_True_Detected    = mean(accuracy_summary$all_true_detected),
+#     Detect_1_1_TV        = mean(accuracy_summary$detect_1_1_tv),
+#     Detect_12_12_TV      = mean(accuracy_summary$detect_12_12_tv),
+#     Detect_1_2           = mean(accuracy_summary$detect_1_2),
+#     Detect_2_3           = mean(accuracy_summary$detect_2_3),
+#     Detect_3_4           = mean(accuracy_summary$detect_3_4),
+#     Detect_4_5           = mean(accuracy_summary$detect_4_5),
+#     Detect_5_6           = mean(accuracy_summary$detect_5_6),
+#     Detect_6_7           = mean(accuracy_summary$detect_6_7),
+#     Detect_7_8           = mean(accuracy_summary$detect_7_8),
+#     Detect_8_9           = mean(accuracy_summary$detect_8_9),
+#     Detect_9_10          = mean(accuracy_summary$detect_9_10),
+#     Detect_10_11         = mean(accuracy_summary$detect_10_11),
+#     Detect_11_12         = mean(accuracy_summary$detect_11_12),
+#     Detect_12_13         = mean(accuracy_summary$detect_12_13),
+#     Detect_13_14         = mean(accuracy_summary$detect_13_14),
+#     Detect_14_15         = mean(accuracy_summary$detect_14_15),
+#     Mean_Sensitivity     = mean(accuracy_summary$sensitivity),
+#     Mean_N_Edges         = mean(accuracy_summary$n_offdiag_edges),
+#     Mean_False_Positives = mean(accuracy_summary$false_positives)
+#   )
+#   return(overall_accuracy)
+# }
+#
+# run_NonStGM_simulation_p15_parallel = function(R = 100, alpha = 0.05, burnin = 20, m = 4096,
+#                                                TV_size = 0.6, nu = 2, L = 1,
+#                                                Kernel = 'Kernel_Triangular', seed = 0,
+#                                                n_cores = NULL) {
+#   if (is.null(n_cores)) {
+#     n_cores = detectCores() - 1
+#   }
+#   cl = makeCluster(n_cores)
+#   registerDoParallel(cl)
+#
+#   # Workers only need the computational dependencies, NOT the parallel runners
+#   clusterEvalQ(cl, {
+#     source('extractVariables.R')
+#     source('exampleVAR.R')
+#     source('KernelWeights.R')
+#     source('Combined_MK_Estimation.R')
+#     source('DFTransform.R')
+#     source('R_Hat_Creation.R')
+#     source('BetaFunctions.R')
+#     source('VarianceFunctions.R')
+#     source('NonStGM_adj.R')
+#     library(dplyr)
+#     library(tibble)
+#   })
+#
+#   clusterExport(cl, c("sim.tvVAR_p15"), envir = environment())
+#   clusterSetRNGStream(cl, seed)
+#
+#   All_Test_tibble = foreach(iter = 1:R, .combine = rbind,
+#                             .packages = c("dplyr", "tibble")) %dopar% {
+#                               x = sim.tvVAR_p15(burnin, m, TV_size)
+#                               tib = NonStGM_adj(x, Kernel = Kernel, nu = nu, L = L, alpha = alpha)
+#                               tib = tib |> mutate(i = iter)
+#                               tib
+#                             }
+#
+#   stopCluster(cl)
+#   results = graph_recovery_p15(All_Test_tibble, alpha = alpha)
+#   return(list(results, All_Test_tibble))
+# }
 
-check_tvVAR_stability_p15 = function(burnin, m, TV_size) {
-  A = matrix(0, ncol = 15, nrow = 15)
-  diag(A) = 0.4
-  for (i in 1:14) {
-    A[i + 1, i] = 0.3
-  }
-  n = burnin + m
-  st = .3 + TV_size * (1 + exp(0.005 * (1:n - n/2)))^(-1)
-  max_mod = sapply(st, function(s) {
-    A[1, 1]   = s
-    A[12, 12] = s
-    max(Mod(eigen(A)$values))
-  })
-  cat("A[1,1]/A[12,12] range:", round(range(st), 3),
-      "| Max eigenvalue modulus:", round(max(max_mod), 4),
-      "| Stable:", max(max_mod) < 1, "\n")
-  return(max(max_mod) < 1)
-}
-
-graph_recovery_p15 = function(Test_tibble, alpha = 0.05) {
-  # True graph: chain 1-2-3-...-15 (14 off-diagonal edges)
-  # TV on diagonal: nodes 1 and 12
-  # A'A only has nonzero off-diagonal at (j, j+1) since columns only overlap at one row
-  Test_tibble = Test_tibble |>
-    filter(a <= c) |>
-    filter((a != c & r == 0) | (a == c & r == 1))
-
-  Graph_tibble = Test_tibble |>
-    group_by(a, c, i) |>
-    summarise(
-      p_min = min(p.adjust(c(Re, Im), method = "BY")),
-      .groups = "drop"
-    )
-
-  graph_recovery_results = Graph_tibble |>
-    group_by(i) |>
-    summarise(
-      detect_1_1_tv  = any(a == 1  & c == 1  & p_min < alpha),
-      detect_12_12_tv = any(a == 12 & c == 12 & p_min < alpha),
-      detect_1_2   = any(a == 1  & c == 2  & p_min < alpha),
-      detect_1_13   = any(a == 1  & c == 13  & p_min < alpha),
-      detect_1_14   = any(a == 1  & c == 14  & p_min < alpha),
-      detect_2_3   = any(a == 2  & c == 3  & p_min < alpha),
-      detect_3_4   = any(a == 3  & c == 4  & p_min < alpha),
-      detect_4_5   = any(a == 4  & c == 5  & p_min < alpha),
-      detect_5_6   = any(a == 5  & c == 6  & p_min < alpha),
-      detect_6_7   = any(a == 6  & c == 7  & p_min < alpha),
-      detect_7_8   = any(a == 7  & c == 8  & p_min < alpha),
-      detect_8_9   = any(a == 8  & c == 9  & p_min < alpha),
-      detect_9_10  = any(a == 9  & c == 10 & p_min < alpha),
-      detect_10_11 = any(a == 10 & c == 11 & p_min < alpha),
-      detect_11_12 = any(a == 11 & c == 12 & p_min < alpha),
-      detect_12_13 = any(a == 12 & c == 13 & p_min < alpha),
-      detect_13_14 = any(a == 13 & c == 14 & p_min < alpha),
-      detect_14_15 = any(a == 14 & c == 15 & p_min < alpha),
-      n_offdiag_edges = sum(a != c & p_min < alpha),
-      .groups = "drop"
-    )
-
-  accuracy_summary = graph_recovery_results |>
-    mutate(
-      all_offdiag_detected = detect_1_2 & detect_1_13 & detect_1_14 & detect_2_3 & detect_3_4 &
-        detect_4_5 & detect_5_6 & detect_6_7 & detect_7_8 &
-        detect_8_9 & detect_9_10 & detect_10_11 & detect_11_12 &
-        detect_12_13 & detect_13_14 & detect_14_15,
-      all_true_detected = all_offdiag_detected & detect_1_1_tv & detect_12_12_tv,
-      perfect = all_true_detected & (n_offdiag_edges == 14),
-      sensitivity = (detect_1_1_tv + detect_12_12_tv +
-                       detect_1_2 + detect_1_14 + detect_1_13 + detect_2_3 + detect_3_4 + detect_4_5 +
-                       detect_5_6 + detect_6_7 + detect_7_8 + detect_8_9 +
-                       detect_9_10 + detect_10_11 + detect_11_12 +
-                       detect_12_13 + detect_13_14 + detect_14_15) / 18,
-      false_positives = pmax(0, n_offdiag_edges - 16)
-    )
-
-  overall_accuracy = tibble(
-    Method               = "Global BY",
-    Perfect_Recovery     = mean(accuracy_summary$perfect),
-    All_True_Detected    = mean(accuracy_summary$all_true_detected),
-    Detect_1_1_TV        = mean(accuracy_summary$detect_1_1_tv),
-    Detect_12_12_TV      = mean(accuracy_summary$detect_12_12_tv),
-    Detect_1_2           = mean(accuracy_summary$detect_1_2),
-    Detect_2_3           = mean(accuracy_summary$detect_2_3),
-    Detect_3_4           = mean(accuracy_summary$detect_3_4),
-    Detect_4_5           = mean(accuracy_summary$detect_4_5),
-    Detect_5_6           = mean(accuracy_summary$detect_5_6),
-    Detect_6_7           = mean(accuracy_summary$detect_6_7),
-    Detect_7_8           = mean(accuracy_summary$detect_7_8),
-    Detect_8_9           = mean(accuracy_summary$detect_8_9),
-    Detect_9_10          = mean(accuracy_summary$detect_9_10),
-    Detect_10_11         = mean(accuracy_summary$detect_10_11),
-    Detect_11_12         = mean(accuracy_summary$detect_11_12),
-    Detect_12_13         = mean(accuracy_summary$detect_12_13),
-    Detect_13_14         = mean(accuracy_summary$detect_13_14),
-    Detect_14_15         = mean(accuracy_summary$detect_14_15),
-    Mean_Sensitivity     = mean(accuracy_summary$sensitivity),
-    Mean_N_Edges         = mean(accuracy_summary$n_offdiag_edges),
-    Mean_False_Positives = mean(accuracy_summary$false_positives)
-  )
-  return(overall_accuracy)
-}
-
-run_NonStGM_simulation_p15_parallel = function(R = 100, alpha = 0.05, burnin = 20, m = 4096,
-                                               TV_size = 0.6, nu = 2, L = 1,
-                                               Kernel = 'Kernel_Triangular', seed = 0,
-                                               n_cores = NULL) {
-  if (is.null(n_cores)) {
-    n_cores = detectCores() - 1
-  }
-  cl = makeCluster(n_cores)
-  registerDoParallel(cl)
-  clusterEvalQ(cl, {
-    source('extractVariables.R')
-    source('exampleVAR.R')
-    source('KernelWeights.R')
-    source('Combined_MK_Estimation.R')
-    source('DFTransform.R')
-    source('R_Hat_Creation.R')
-    source('BetaFunctions.R')
-    source('VarianceFunctions.R')
-    source('NonStGM_adj.R')
-    source('parallel_sim_dependencies.R')
-    library(dplyr)
-    library(tibble)
-  })
-  clusterExport(cl, c("sim.tvVAR_p15"), envir = environment())
-  clusterSetRNGStream(cl, seed)
-  All_Test_tibble = foreach(iter = 1:R, .combine = rbind, .packages = c("dplyr", "tibble")) %dopar% {
-    x = sim.tvVAR_p15(burnin, m, TV_size)
-    tib = NonStGM_adj(x, Kernel = Kernel, nu = nu, L = L, alpha = alpha)
-    tib = tib |> mutate(i = iter)
-    tib
-  }
-  stopCluster(cl)
-  results = graph_recovery_p15(All_Test_tibble, alpha = alpha)
-  return(list(results, All_Test_tibble))
-}
-
-results_p15 = run_NonStGM_simulation_p15_parallel(
-  R = 100,
-  alpha = 0.05,
-  burnin = 200,
-  m = 2^12,
-  TV_size = .6,
-  nu = 2,
-  L = 1,
-  Kernel = 'Kernel_Triangular',
-  seed = 1,
-  n_cores = 16
-)
-print(results_p15[[1]])
+# results_p15 = run_NonStGM_simulation_p15_parallel(
+#   R = 100,
+#   alpha = 0.05,
+#   burnin = 200,
+#   m = 2^12,
+#   TV_size = .6,
+#   nu = 2,
+#   L = 1,
+#   Kernel = 'Kernel_Triangular',
+#   seed = 1,
+#   n_cores = 8
+# )
+# print(results_p15[[1]])
