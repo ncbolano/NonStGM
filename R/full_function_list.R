@@ -11,7 +11,10 @@ extractVariables = function(x) {
   JJ0 = mvfft(x) / sqrt(nrow(x))
   n_rows = nrow(x)
   backward = c(((n_rows / 2) + 1):n_rows)
-  JJ = rbind(JJ0[backward, ], JJ0[c(1:(n_rows / 2)), ])
+  JJ = rbind(
+    JJ0[backward, , drop = FALSE],
+    JJ0[1:(n_rows / 2), , drop = FALSE]
+  )
   return(list(JJ,p,nu))
 }
 
@@ -244,10 +247,17 @@ return_max = function(x, M) {
 #' @return
 #' @noRd
 extractK = function(JJ,coefnum) {
+  cat("\n--- extractK ---\n")
+  cat("dim(JJ):", paste(dim(JJ), collapse=" x "), "\n")
+  cat("coefnum:", coefnum, "\n")
   M_initial = 2 * coefnum
   n_freq = floor(nrow(JJ) / 2)
   floor = M_initial + 1
   ceiling = n_freq - M_initial
+  cat("M_initial =", M_initial, "\n")
+  cat("n_freq =", n_freq, "\n")
+  cat("floor =", floor, "\n")
+  cat("ceiling =", ceiling, "\n")
 
   trace_smooth = numeric(n_freq)
   diag_smooth = matrix(0, nrow = n_freq, ncol = ncol(JJ)) # Matrix for diagonal elements
@@ -284,17 +294,14 @@ local_M_selection = function(JJ, k, M_grid) {
 
   best_local_M = numeric(length = length(k))
   CV_scores = numeric(length = length(M_grid))
-
   for (i in seq_along(k)) {
     k_candidate = k[i]
-
     I_candidate_k = outer(JJ[k_candidate, ], Conj(JJ[k_candidate, ]))
 
     for (j in seq_along(M_grid)) {
       M = M_grid[j]
 
       S_hat_k = smoothed_spectral_density_LOO(JJ, k = k_candidate, M = M, leave_out = k_candidate)
-
       CV_scores[j] = Re(whittle_loss(S_hat_k, I_candidate_k))
 
       #cat("M =", M, "K =", k_candidate , " CV =", CV_scores[j], "\n")
@@ -481,27 +488,20 @@ beta = function(J, k, nu, W, M, a, delta) {
 #' @param a scalar index value which determines removal of specific index from local DFT matrix
 #' @return
 #' @noRd
-beta_beta_r = function(beta,nu,p)
+beta_beta_r = function(beta, nu, p)
 {
-  tmp1 = as.vector(unlist(sapply((-nu):nu,function(i)
+  tmp1 = as.vector(unlist(sapply((-nu):nu, function(i)
   {
-    if(i==0)
-      return(
-        (nu)*p+(1:(p-1))
-      )
-    if(i<0)
-      return(
-        (abs(i)+nu)*p+1:p-1
-      )
-    if(i>0)
-      return(
-        (nu-abs(i))*p+1:p
-      )
-  }
-  )))
+    if (i == 0)
+      return((nu) * p + seq_len(p - 1))
+    if (i < 0)
+      return((abs(i) + nu) * p + 1:p - 1)
+    if (i > 0)
+      return((nu - abs(i)) * p + 1:p)
+  })))
   tmp2 = seq_along(beta)
   beta_erg = beta
-  beta_erg[tmp2!=tmp1] = ((beta+Conj(beta[tmp1]))[tmp2!=tmp1])/2
+  beta_erg[tmp2 != tmp1] = ((beta + Conj(beta[tmp1]))[tmp2 != tmp1]) / 2
   return(beta_erg)
 }
 #' Transformation of frequencies (excluding a single index)
@@ -851,60 +851,60 @@ check_tvVAR_stability = function(burnin, m, TV_size) {
   return(max(max_mod) < 1)
 }
 
-graph_recovery_p5 = function(Test_tibble, alpha = 0.05) {
-  Test_tibble = Test_tibble |>
-    filter(a <= c) |>
-    filter((a != c & r == 0) | (a == c & r != 0))
-
-  Graph_tibble = Test_tibble |>
-    group_by(a, c, i) |>
-    summarise(
-      p_min = min(p.adjust(c(Re, Im), method = "BY")),
-      .groups = "drop"
-    )
-
-  graph_recovery_results = Graph_tibble |>
-    group_by(i) |>
-    summarise(
-      detect_11_tv = any(a == 1 & c == 1 & p_min < alpha),
-      detect_12 = any(a == 1 & c == 2 & p_min < alpha),
-      detect_14 = any(a == 1 & c == 4 & p_min < alpha),
-      detect_15 = any(a == 1 & c == 5 & p_min < alpha),
-      detect_23 = any(a == 2 & c == 3 & p_min < alpha),
-      detect_34 = any(a == 3 & c == 4 & p_min < alpha),
-      detect_45 = any(a == 4 & c == 5 & p_min < alpha),
-      n_offdiag_edges = sum(a != c & p_min < alpha),
-      .groups = "drop"
-    )
-
-  accuracy_summary = graph_recovery_results |>
-    mutate(
-      all_offdiag_detected = detect_12 & detect_14 & detect_15 &
-        detect_23 & detect_34 & detect_45,
-      all_true_detected = all_offdiag_detected & detect_11_tv,
-      perfect = all_true_detected & (n_offdiag_edges == 6),
-      sensitivity = (detect_11_tv + detect_12 + detect_14 +
-                       detect_15 + detect_23 + detect_34 + detect_45) / 7,
-      false_positives = pmax(0, n_offdiag_edges - 6)
-    )
-
-  overall_accuracy = tibble(
-    Method = "Global BY",
-    Perfect_Recovery = mean(accuracy_summary$perfect),
-    All_True_Detected = mean(accuracy_summary$all_true_detected),
-    Detect_11_TV = mean(accuracy_summary$detect_11_tv),
-    Detect_12 = mean(accuracy_summary$detect_12),
-    Detect_14 = mean(accuracy_summary$detect_14),
-    Detect_15 = mean(accuracy_summary$detect_15),
-    Detect_23 = mean(accuracy_summary$detect_23),
-    Detect_34 = mean(accuracy_summary$detect_34),
-    Detect_45 = mean(accuracy_summary$detect_45),
-    Mean_Sensitivity = mean(accuracy_summary$sensitivity),
-    Mean_N_Edges = mean(accuracy_summary$n_offdiag_edges),
-    Mean_False_Positives = mean(accuracy_summary$false_positives)
-  )
-  return(overall_accuracy)
-}
+# graph_recovery_p5 = function(Test_tibble, alpha = 0.05) {
+#   Test_tibble = Test_tibble |>
+#     filter(a <= c) |>
+#     filter((a != c & r == 0) | (a == c & r != 0))
+#
+#   Graph_tibble = Test_tibble |>
+#     group_by(a, c, i) |>
+#     summarise(
+#       p_min = min(p.adjust(c(Re, Im), method = "BY")),
+#       .groups = "drop"
+#     )
+#
+#   graph_recovery_results = Graph_tibble |>
+#     group_by(i) |>
+#     summarise(
+#       detect_11_tv = any(a == 1 & c == 1 & p_min < alpha),
+#       detect_12 = any(a == 1 & c == 2 & p_min < alpha),
+#       detect_14 = any(a == 1 & c == 4 & p_min < alpha),
+#       detect_15 = any(a == 1 & c == 5 & p_min < alpha),
+#       detect_23 = any(a == 2 & c == 3 & p_min < alpha),
+#       detect_34 = any(a == 3 & c == 4 & p_min < alpha),
+#       detect_45 = any(a == 4 & c == 5 & p_min < alpha),
+#       n_offdiag_edges = sum(a != c & p_min < alpha),
+#       .groups = "drop"
+#     )
+#
+#   accuracy_summary = graph_recovery_results |>
+#     mutate(
+#       all_offdiag_detected = detect_12 & detect_14 & detect_15 &
+#         detect_23 & detect_34 & detect_45,
+#       all_true_detected = all_offdiag_detected & detect_11_tv,
+#       perfect = all_true_detected & (n_offdiag_edges == 6),
+#       sensitivity = (detect_11_tv + detect_12 + detect_14 +
+#                        detect_15 + detect_23 + detect_34 + detect_45) / 7,
+#       false_positives = pmax(0, n_offdiag_edges - 6)
+#     )
+#
+#   overall_accuracy = tibble(
+#     Method = "Global BY",
+#     Perfect_Recovery = mean(accuracy_summary$perfect),
+#     All_True_Detected = mean(accuracy_summary$all_true_detected),
+#     Detect_11_TV = mean(accuracy_summary$detect_11_tv),
+#     Detect_12 = mean(accuracy_summary$detect_12),
+#     Detect_14 = mean(accuracy_summary$detect_14),
+#     Detect_15 = mean(accuracy_summary$detect_15),
+#     Detect_23 = mean(accuracy_summary$detect_23),
+#     Detect_34 = mean(accuracy_summary$detect_34),
+#     Detect_45 = mean(accuracy_summary$detect_45),
+#     Mean_Sensitivity = mean(accuracy_summary$sensitivity),
+#     Mean_N_Edges = mean(accuracy_summary$n_offdiag_edges),
+#     Mean_False_Positives = mean(accuracy_summary$false_positives)
+#   )
+#   return(overall_accuracy)
+# }
 # ============================================================
 # SIMULATION RUNNER FOR p=5
 # ============================================================
@@ -1424,17 +1424,28 @@ NonStGM_node_refit = function(x, neighbors, Kernel = 'Kernel_Triangular',
     if (length(S) == 0) S = a
     x_sub = x[, S, drop = FALSE]
     a_local = which(S == a)
-
+    # cat("dim(x_sub) =", dim(x_sub), "\n")
+    # str(x_sub)
     variable_list = extractVariables(x_sub)
     J_sub = variable_list[[1]] ; p_sub = as.numeric(variable_list[2])
     coefnum_sub = (2 * p_sub * nu) + p_sub - 1
+#
+#     cat(
+#       "\n=====================\n",
+#       "Node =", a,
+#       "\nS =", paste(S, collapse=","),
+#       "\na_local =", a_local,
+#       "\np_sub =", p_sub,
+#       "\ncoefnum_sub =", coefnum_sub,
+#       "\n=====================\n"
+#     )
 
     k_sub = extractK(J_sub, coefnum_sub)
+
     n = nrow(x)
     M_grid = unique(round(seq(max(coefnum_sub , n^(1/5)),
                               max(coefnum_sub + 100 , n^(1/2)) , length.out = 10)))
     M_list = local_M_selection(J_sub, k_sub, M_grid)
-
     for (j in seq_along(k_sub)) {
       bc = beta(J_sub, k_sub[j], nu, Kernel_function, M_list[j], a = a_local, delta = 0)
       vb_full = variance.estimator.v2(J_sub, k_sub[j], nu, Kernel_function, M_list[j],
@@ -1474,7 +1485,313 @@ NonStGM_node_refit = function(x, neighbors, Kernel = 'Kernel_Triangular',
   return(Node_tibble)
 }
 
+graph_recovery_p5 = function(Test_tibble, alpha = 0.05) {
+  Test_tibble = Test_tibble |>
+    filter(a <= c) |>
+    filter((a != c & r == 0) | (a == c & r != 0))
+  Graph_tibble = Test_tibble |>
+    group_by(a, c, i) |>
+    summarise(
+      p_min = min(p.adjust(c(Re, Im), method = "BY")),
+      .groups = "drop"
+    )
+  true_edges = list(c(1,2), c(1,4), c(1,5), c(2,3), c(3,4), c(4,5))
+  true_nodes = 1
+  n_true_edges = length(true_edges)
+  n_true_nodes = length(true_nodes)
+  n_false_possible = (10 - n_true_edges) + (5 - n_true_nodes)
+  recovery = Graph_tibble |>
+    group_by(i) |>
+    summarise(
+      true_edges_found = sum(sapply(true_edges, function(e)
+        any(a == e[1] & c == e[2] & p_min < alpha))),
+      true_nodes_found = sum(sapply(true_nodes, function(nd)
+        any(a == nd & c == nd & p_min < alpha))),
+      false_edges = sum(a != c & p_min < alpha) - sum(sapply(true_edges, function(e)
+        any(a == e[1] & c == e[2] & p_min < alpha))),
+      false_nodes = sum(a == c & p_min < alpha) - sum(sapply(true_nodes, function(nd)
+        any(a == nd & c == nd & p_min < alpha))),
+      .groups = "drop"
+    ) |>
+    mutate(
+      full = (true_edges_found == n_true_edges) & (true_nodes_found == n_true_nodes),
+      edge_pct = true_edges_found / n_true_edges,
+      node_pct = true_nodes_found / n_true_nodes,
+      false_positives = pmax(0, false_edges) + pmax(0, false_nodes)
+    )
+  tibble(
+    Method = "Global BY",
+    Full_Detection = mean(recovery$full),
+    Avg_Edge_Identification = mean(recovery$edge_pct),
+    Avg_Node_Identification = mean(recovery$node_pct),
+    False_Positive_Rate = if (n_false_possible > 0) mean(recovery$false_positives) / n_false_possible else 0
+  )
+}
+
 graph_recovery_p5_twostep = function(Edge_tibble, Node_tibble, alpha = 0.05) {
+  Edge_graph = Edge_tibble |>
+    filter(a < c, r == 0) |>
+    group_by(a, c, i) |>
+    summarise(p_min = min(p.adjust(c(Re, Im), method = "BY")), .groups = "drop")
+  Node_graph = Node_tibble |>
+    group_by(a, c, i) |>
+    summarise(p_min = min(p.adjust(c(Re, Im), method = "BY")), .groups = "drop")
+  true_edges = list(c(1,2), c(1,4), c(1,5), c(2,3), c(3,4), c(4,5))
+  true_nodes = 1
+  n_true_edges = length(true_edges)
+  n_true_nodes = length(true_nodes)
+  n_false_possible = (10 - n_true_edges) + (5 - n_true_nodes)
+  edge_recovery = Edge_graph |>
+    group_by(i) |>
+    summarise(
+      true_edges_found = sum(sapply(true_edges, function(e)
+        any(a == e[1] & c == e[2] & p_min < alpha))),
+      false_edges = sum(p_min < alpha) - sum(sapply(true_edges, function(e)
+        any(a == e[1] & c == e[2] & p_min < alpha))),
+      .groups = "drop"
+    )
+  node_recovery = Node_graph |>
+    group_by(i) |>
+    summarise(
+      true_nodes_found = sum(sapply(true_nodes, function(nd)
+        any(a == nd & c == nd & p_min < alpha))),
+      false_nodes = sum(a == c & p_min < alpha) - sum(sapply(true_nodes, function(nd)
+        any(a == nd & c == nd & p_min < alpha))),
+      .groups = "drop"
+    )
+  recovery = full_join(edge_recovery, node_recovery, by = "i") |>
+    mutate(
+      true_edges_found = coalesce(true_edges_found, 0L),
+      false_edges = coalesce(false_edges, 0),
+      true_nodes_found = coalesce(true_nodes_found, 0L),
+      false_nodes = coalesce(false_nodes, 0),
+      full = (true_edges_found == n_true_edges) & (true_nodes_found == n_true_nodes),
+      edge_pct = true_edges_found / n_true_edges,
+      node_pct = true_nodes_found / n_true_nodes,
+      false_positives = pmax(0, false_edges) + pmax(0, false_nodes)
+    )
+  tibble(
+    Method = "TwoStep BY",
+    Full_Detection = mean(recovery$full),
+    Avg_Edge_Identification = mean(recovery$edge_pct),
+    Avg_Node_Identification = mean(recovery$node_pct),
+    False_Positive_Rate = if (n_false_possible > 0) mean(recovery$false_positives) / n_false_possible else 0
+  )
+}
+
+sim.tvVAR_p5_alltv = function(burnin, m, TV_size) {
+  A = matrix(c(
+    0.5,  0,    0,    0,    0,
+    0.3,  0.6,  0,    0,    0,
+    0,    0.3,  0.5,  0,    0,
+    0,    0,    0.3, 0.55, 0,
+    0.3, 0,    0,    0.3,  0.5
+  ), ncol = 5, byrow = TRUE)
+  n = m + burnin
+  p = 5
+  x = matrix(rnorm(n * p), ncol = p)
+  x1 = x
+  st = 0.3 + TV_size * (1 + exp(0.005 * (c(1:n) - (n / 2))))^(-1)
+  for (tt in 2:n) {
+    A.t = A
+    A.t[1, 1] = st[tt]
+    A.t[2, 2] = st[tt]
+    A.t[3, 3] = st[tt]
+    A.t[4, 4] = st[tt]
+    A.t[5, 5] = st[tt]
+    temp = A.t %*% matrix(x1[tt - 1, ], ncol = 1) + matrix(x[tt, ], ncol = 1)
+    x1[tt, ] = c(temp)
+  }
+  x2 = x1[-c(1:burnin), ]
+  return(x2)
+}
+
+# graph_recovery_p5_alltv = function(Test_tibble, alpha = 0.05) {
+#   Test_tibble = Test_tibble |>
+#     filter(a <= c) |>
+#     filter((a != c & r == 0) | (a == c & r != 0))
+#
+#   Graph_tibble = Test_tibble |>
+#     group_by(a, c, i) |>
+#     summarise(
+#       p_min = min(p.adjust(c(Re, Im), method = "BY")),
+#       .groups = "drop"
+#     )
+#
+#   graph_recovery_results = Graph_tibble |>
+#     group_by(i) |>
+#     summarise(
+#       detect_11_tv = any(a == 1 & c == 1 & p_min < alpha),
+#       detect_22_tv = any(a == 2 & c == 2 & p_min < alpha),
+#       detect_33_tv = any(a == 3 & c == 3 & p_min < alpha),
+#       detect_44_tv = any(a == 4 & c == 4 & p_min < alpha),
+#       detect_55_tv = any(a == 5 & c == 5 & p_min < alpha),
+#       detect_12 = any(a == 1 & c == 2 & p_min < alpha),
+#       detect_14 = any(a == 1 & c == 4 & p_min < alpha),
+#       detect_15 = any(a == 1 & c == 5 & p_min < alpha),
+#       detect_23 = any(a == 2 & c == 3 & p_min < alpha),
+#       detect_34 = any(a == 3 & c == 4 & p_min < alpha),
+#       detect_45 = any(a == 4 & c == 5 & p_min < alpha),
+#       n_offdiag_edges = sum(a != c & p_min < alpha),
+#       .groups = "drop"
+#     )
+#
+#   accuracy_summary = graph_recovery_results |>
+#     mutate(
+#       all_offdiag_detected = detect_12 & detect_14 & detect_15 &
+#         detect_23 & detect_34 & detect_45,
+#       all_tv_detected = detect_11_tv & detect_22_tv & detect_33_tv &
+#         detect_44_tv & detect_55_tv,
+#       all_true_detected = all_offdiag_detected & all_tv_detected,
+#       perfect = all_true_detected & (n_offdiag_edges == 6),
+#       sensitivity = (detect_11_tv + detect_22_tv + detect_33_tv +
+#                        detect_44_tv + detect_55_tv +
+#                        detect_12 + detect_14 + detect_15 +
+#                        detect_23 + detect_34 + detect_45) / 11,
+#       average_tv_connection = (detect_11_tv + detect_22_tv + detect_33_tv +
+#                                  detect_44_tv + detect_55_tv) / 5,
+#       false_positives = pmax(0, n_offdiag_edges - 6)
+#     )
+#
+#   tibble(
+#     Method = "Global BY",
+#     Perfect_Recovery = mean(accuracy_summary$perfect),
+#     All_True_Detected = mean(accuracy_summary$all_true_detected),
+#     Detect_11_TV = mean(accuracy_summary$detect_11_tv),
+#     Detect_22_TV = mean(accuracy_summary$detect_22_tv),
+#     Detect_33_TV = mean(accuracy_summary$detect_33_tv),
+#     Detect_44_TV = mean(accuracy_summary$detect_44_tv),
+#     Detect_55_TV = mean(accuracy_summary$detect_55_tv),
+#     Average_TV_Connection = mean(accuracy_summary$average_tv_connection),
+#     Detect_12 = mean(accuracy_summary$detect_12),
+#     Detect_14 = mean(accuracy_summary$detect_14),
+#     Detect_15 = mean(accuracy_summary$detect_15),
+#     Detect_23 = mean(accuracy_summary$detect_23),
+#     Detect_34 = mean(accuracy_summary$detect_34),
+#     Detect_45 = mean(accuracy_summary$detect_45),
+#     Mean_Sensitivity = mean(accuracy_summary$sensitivity),
+#     Mean_N_Edges = mean(accuracy_summary$n_offdiag_edges),
+#     Mean_False_Positives = mean(accuracy_summary$false_positives)
+#   )
+# }
+#
+# graph_recovery_p5_alltv_twostep = function(Edge_tibble, Node_tibble, alpha = 0.05) {
+#   Edge_graph = Edge_tibble |>
+#     filter(a < c, r == 0) |>
+#     group_by(a, c, i) |>
+#     summarise(p_min = min(p.adjust(c(Re, Im), method = "BY")), .groups = "drop")
+#
+#   Node_graph = Node_tibble |>
+#     group_by(a, c, i) |>
+#     summarise(p_min = min(p.adjust(c(Re, Im), method = "BY")), .groups = "drop")
+#
+#   Combined = bind_rows(Edge_graph, Node_graph)
+#
+#   graph_recovery_results = Combined |>
+#     group_by(i) |>
+#     summarise(
+#       detect_11_tv = any(a == 1 & c == 1 & p_min < alpha),
+#       detect_22_tv = any(a == 2 & c == 2 & p_min < alpha),
+#       detect_33_tv = any(a == 3 & c == 3 & p_min < alpha),
+#       detect_44_tv = any(a == 4 & c == 4 & p_min < alpha),
+#       detect_55_tv = any(a == 5 & c == 5 & p_min < alpha),
+#       detect_12 = any(a == 1 & c == 2 & p_min < alpha),
+#       detect_14 = any(a == 1 & c == 4 & p_min < alpha),
+#       detect_15 = any(a == 1 & c == 5 & p_min < alpha),
+#       detect_23 = any(a == 2 & c == 3 & p_min < alpha),
+#       detect_34 = any(a == 3 & c == 4 & p_min < alpha),
+#       detect_45 = any(a == 4 & c == 5 & p_min < alpha),
+#       n_offdiag_edges = sum(a != c & p_min < alpha),
+#       .groups = "drop"
+#     )
+#
+#   accuracy_summary = graph_recovery_results |>
+#     mutate(
+#       all_offdiag_detected = detect_12 & detect_14 & detect_15 &
+#         detect_23 & detect_34 & detect_45,
+#       all_tv_detected = detect_11_tv & detect_22_tv & detect_33_tv &
+#         detect_44_tv & detect_55_tv,
+#       all_true_detected = all_offdiag_detected & all_tv_detected,
+#       perfect = all_true_detected & (n_offdiag_edges == 6),
+#       sensitivity = (detect_11_tv + detect_22_tv + detect_33_tv +
+#                        detect_44_tv + detect_55_tv +
+#                        detect_12 + detect_14 + detect_15 +
+#                        detect_23 + detect_34 + detect_45) / 11,
+#       average_tv_connection = (detect_11_tv + detect_22_tv + detect_33_tv +
+#                                  detect_44_tv + detect_55_tv) / 5,
+#       false_positives = pmax(0, n_offdiag_edges - 6)
+#     )
+#
+#   tibble(
+#     Method = "TwoStep BY",
+#     Perfect_Recovery = mean(accuracy_summary$perfect),
+#     All_True_Detected = mean(accuracy_summary$all_true_detected),
+#     Detect_11_TV = mean(accuracy_summary$detect_11_tv),
+#     Detect_22_TV = mean(accuracy_summary$detect_22_tv),
+#     Detect_33_TV = mean(accuracy_summary$detect_33_tv),
+#     Detect_44_TV = mean(accuracy_summary$detect_44_tv),
+#     Detect_55_TV = mean(accuracy_summary$detect_55_tv),
+#     Average_TV_Connection = mean(accuracy_summary$average_tv_connection),
+#     Detect_12 = mean(accuracy_summary$detect_12),
+#     Detect_14 = mean(accuracy_summary$detect_14),
+#     Detect_15 = mean(accuracy_summary$detect_15),
+#     Detect_23 = mean(accuracy_summary$detect_23),
+#     Detect_34 = mean(accuracy_summary$detect_34),
+#     Detect_45 = mean(accuracy_summary$detect_45),
+#     Mean_Sensitivity = mean(accuracy_summary$sensitivity),
+#     Mean_N_Edges = mean(accuracy_summary$n_offdiag_edges),
+#     Mean_False_Positives = mean(accuracy_summary$false_positives)
+#   )
+# }
+
+graph_recovery_p5_alltv = function(Test_tibble, alpha = 0.05) {
+  Test_tibble = Test_tibble |>
+    filter(a <= c) |>
+    filter((a != c & r == 0) | (a == c & r != 0))
+
+  Graph_tibble = Test_tibble |>
+    group_by(a, c, i) |>
+    summarise(
+      p_min = min(p.adjust(c(Re, Im), method = "BY")),
+      .groups = "drop"
+    )
+
+  true_edges = list(c(1,2), c(1,4), c(1,5), c(2,3), c(3,4), c(4,5))
+  true_nodes = 1:5
+  n_true_edges = length(true_edges)
+  n_true_nodes = length(true_nodes)
+  n_false_possible = (10 - n_true_edges) + (5 - n_true_nodes)
+
+  recovery = Graph_tibble |>
+    group_by(i) |>
+    summarise(
+      true_edges_found = sum(sapply(true_edges, function(e)
+        any(a == e[1] & c == e[2] & p_min < alpha))),
+      true_nodes_found = sum(sapply(true_nodes, function(nd)
+        any(a == nd & c == nd & p_min < alpha))),
+      false_edges = sum(a != c & p_min < alpha) - sum(sapply(true_edges, function(e)
+        any(a == e[1] & c == e[2] & p_min < alpha))),
+      false_nodes = sum(a == c & p_min < alpha) - sum(sapply(true_nodes, function(nd)
+        any(a == nd & c == nd & p_min < alpha))),
+      .groups = "drop"
+    ) |>
+    mutate(
+      full = (true_edges_found == n_true_edges) & (true_nodes_found == n_true_nodes),
+      edge_pct = true_edges_found / n_true_edges,
+      node_pct = true_nodes_found / n_true_nodes,
+      false_positives = pmax(0, false_edges) + pmax(0, false_nodes)
+    )
+
+  tibble(
+    Method = "Global BY",
+    Full_Detection = mean(recovery$full),
+    Avg_Edge_Identification = mean(recovery$edge_pct),
+    Avg_Node_Identification = mean(recovery$node_pct),
+    False_Positive_Rate = if (n_false_possible > 0) mean(recovery$false_positives) / n_false_possible else 0
+  )
+}
+
+graph_recovery_p5_alltv_twostep = function(Edge_tibble, Node_tibble, alpha = 0.05) {
   Edge_graph = Edge_tibble |>
     filter(a < c, r == 0) |>
     group_by(a, c, i) |>
@@ -1482,52 +1799,60 @@ graph_recovery_p5_twostep = function(Edge_tibble, Node_tibble, alpha = 0.05) {
 
   Node_graph = Node_tibble |>
     group_by(a, c, i) |>
-    summarise(
-      p_min = min(p.adjust(c(Re, Im), method = "BY")),
-      .groups = "drop"
-    )
+    summarise(p_min = min(p.adjust(c(Re, Im), method = "BY")), .groups = "drop")
 
-  Combined = bind_rows(Edge_graph, Node_graph)
+  true_edges = list(c(1,2), c(1,4), c(1,5), c(2,3), c(3,4), c(4,5))
+  true_nodes = 1:5
+  n_true_edges = length(true_edges)
+  n_true_nodes = length(true_nodes)
+  n_false_possible = (10 - n_true_edges) + (5 - n_true_nodes)
 
-  graph_recovery_results = Combined |>
+  edge_recovery = Edge_graph |>
     group_by(i) |>
     summarise(
-      detect_11_tv = any(a == 1 & c == 1 & p_min < alpha),
-      detect_12 = any(a == 1 & c == 2 & p_min < alpha),
-      detect_14 = any(a == 1 & c == 4 & p_min < alpha),
-      detect_15 = any(a == 1 & c == 5 & p_min < alpha),
-      detect_23 = any(a == 2 & c == 3 & p_min < alpha),
-      detect_34 = any(a == 3 & c == 4 & p_min < alpha),
-      detect_45 = any(a == 4 & c == 5 & p_min < alpha),
-      n_offdiag_edges = sum(a != c & p_min < alpha),
+      true_edges_found = sum(sapply(true_edges, function(e)
+        any(a == e[1] & c == e[2] & p_min < alpha))),
+      false_edges = sum(p_min < alpha) - sum(sapply(true_edges, function(e)
+        any(a == e[1] & c == e[2] & p_min < alpha))),
       .groups = "drop"
     )
 
-  accuracy_summary = graph_recovery_results |>
+  node_recovery = Node_graph |>
+    group_by(i) |>
+    summarise(
+      true_nodes_found = sum(sapply(true_nodes, function(nd)
+        any(a == nd & c == nd & p_min < alpha))),
+      false_nodes = sum(a == c & p_min < alpha) - sum(sapply(true_nodes, function(nd)
+        any(a == nd & c == nd & p_min < alpha))),
+      .groups = "drop"
+    )
+
+  recovery = full_join(edge_recovery, node_recovery, by = "i") |>
     mutate(
-      all_offdiag_detected = detect_12 & detect_14 & detect_15 &
-        detect_23 & detect_34 & detect_45,
-      all_true_detected = all_offdiag_detected & detect_11_tv,
-      perfect = all_true_detected & (n_offdiag_edges == 6),
-      sensitivity = (detect_11_tv + detect_12 + detect_14 +
-                       detect_15 + detect_23 + detect_34 + detect_45) / 7,
-      false_positives = pmax(0, n_offdiag_edges - 6)
+      true_edges_found = coalesce(true_edges_found, 0L),
+      false_edges = coalesce(false_edges, 0),
+      true_nodes_found = coalesce(true_nodes_found, 0L),
+      false_nodes = coalesce(false_nodes, 0),
+      full = (true_edges_found == n_true_edges) & (true_nodes_found == n_true_nodes),
+      edge_pct = true_edges_found / n_true_edges,
+      node_pct = true_nodes_found / n_true_nodes,
+      false_positives = pmax(0, false_edges) + pmax(0, false_nodes)
     )
 
   tibble(
     Method = "TwoStep BY",
-    Perfect_Recovery = mean(accuracy_summary$perfect),
-    All_True_Detected = mean(accuracy_summary$all_true_detected),
-    Detect_11_TV = mean(accuracy_summary$detect_11_tv),
-    Detect_12 = mean(accuracy_summary$detect_12),
-    Detect_14 = mean(accuracy_summary$detect_14),
-    Detect_15 = mean(accuracy_summary$detect_15),
-    Detect_23 = mean(accuracy_summary$detect_23),
-    Detect_34 = mean(accuracy_summary$detect_34),
-    Detect_45 = mean(accuracy_summary$detect_45),
-    Mean_Sensitivity = mean(accuracy_summary$sensitivity),
-    Mean_N_Edges = mean(accuracy_summary$n_offdiag_edges),
-    Mean_False_Positives = mean(accuracy_summary$false_positives)
+    Full_Detection = mean(recovery$full),
+    Avg_Edge_Identification = mean(recovery$edge_pct),
+    Avg_Node_Identification = mean(recovery$node_pct),
+    False_Positive_Rate = if (n_false_possible > 0) mean(recovery$false_positives) / n_false_possible else 0
   )
 }
 
+
+
+
+
+
+
+
+######### V2
